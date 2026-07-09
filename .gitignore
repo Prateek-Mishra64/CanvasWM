@@ -1,0 +1,6 @@
+hevel
+hevel.o
+*.o
+*.a
+*.swp
+config.h
