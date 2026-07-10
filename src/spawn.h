@@ -4,7 +4,7 @@
 
 
 struct spawn_request {
-  const char *command;
+  char command[512];
 
   int width;
   int height;
