@@ -185,8 +185,6 @@ void
 newwindow(struct swc_window *swc)
 {
   struct window *w;
-  bool is_select = input.spawn_pending && swc->app_id &&
-                   strcmp(swc->app_id, select_term_app_id) == 0;
 
   w = malloc(sizeof(*w));
   if (!w) return;
@@ -207,10 +205,8 @@ newwindow(struct swc_window *swc)
   /* get pid and check conf for term spawn */
   if (enable_terminal_spawning) {
     w->pid = swc_window_get_pid(swc);
-    printf("window pid = %d\n", w->pid);
-    fflush(stdout);
 
-    if (w->pid == spawn.pid) {
+    if (spawn.pending && w->pid == spawn.pid) {
       swc_window_set_geometry(swc, &spawn.geometry);
       spawn.pending = false;
     }
@@ -242,10 +238,6 @@ newwindow(struct swc_window *swc)
     }
   }
 
-  if (is_select) {
-
-    swc_window_set_geometry(swc, &spawn.geometry);
-  }
   swc_window_show(swc);
   printf("window '%s'\n", swc->title ? swc->title : "");
   focus_window(swc, "new_window");
