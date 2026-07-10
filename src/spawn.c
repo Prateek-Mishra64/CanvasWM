@@ -24,16 +24,22 @@ void
 spawn_execute(void)
 {
   pid_t pid;
-
   pid = fork();
-  printf("spawn pid = %d\n", spawn.pid);
-  fflush(stdout);
-  if (pid > 0)
-    spawn.pid = pid;
 
-  if(pid == 0) {
-    execvp(spawn.argv[0], spawn.argv);
-    _exit(127);
+  printf("fork returned %d\n", pid);
+
+  if (pid > 0) {
+      spawn.pid = pid;
+      printf("saved spawn pid = %d\n", spawn.pid);
   }
+
+  if (pid == 0) {
+      printf("child executing %s\n", spawn.argv[0]);
+      execvp(spawn.argv[0], spawn.argv);
+
+      perror("execvp");
+      _exit(127);
+}
+
 }
 
