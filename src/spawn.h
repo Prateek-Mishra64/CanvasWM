@@ -6,11 +6,7 @@
 struct spawn_request {
   char command[512];
 
-  int x;
-  int y;
-
-  int width;
-  int height;
+  struct swc_rectangle geometry;
 
   pid_t pid;
   bool pending;

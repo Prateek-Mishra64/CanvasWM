@@ -10,10 +10,10 @@ spawn_request_init(const char *command, int width, int height)
       sizeof(spawn.command), 
       "%s",
       command);
-  spawn.width = width;
-  spawn.height = height;
+  spawn.geometry.width = width;
+  spawn.geometry.height = height;
 
-  placement_reserve();
+  placement_compute();
 }
 
 void

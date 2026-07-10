@@ -2,7 +2,7 @@
 #define PLACEMENT_H
 
 void
-placement_reserve(void);
+placement_compute(void);
 
 
 #endif

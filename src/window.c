@@ -168,18 +168,12 @@ static void
 windowappidchanged(void *data)
 {
   struct window *w = data;
-  struct swc_rectangle geometry;
   bool is_select = input.spawn_pending && w->swc->app_id &&
                    strcmp(w->swc->app_id, select_term_app_id) == 0;
 
   if (!is_select) return;
 
-  geometry.x = spawn.x;
-  geometry.y = spawn.y;
-
-  geometry.width = spawn.width;
-  geometry.height = spawn.height;
-  swc_window_set_geometry(w->swc, &geometry);
+  swc_window_set_geometry(w->swc, &spawn.geometry);
 }
 
 static const struct swc_window_handler windowhandler = {
@@ -191,7 +185,6 @@ void
 newwindow(struct swc_window *swc)
 {
   struct window *w;
-  struct swc_rectangle geometry;
   bool is_select = input.spawn_pending && swc->app_id &&
                    strcmp(swc->app_id, select_term_app_id) == 0;
 
@@ -243,12 +236,8 @@ newwindow(struct swc_window *swc)
   }
 
   if (is_select) {
-    geometry.x = spawn.x;
-    geometry.y = spawn.y;
-    geometry.width = spawn.width;
-    geometry.height = spawn.height;
 
-    swc_window_set_geometry(swc, &geometry);
+    swc_window_set_geometry(swc, &spawn.geometry);
   }
   swc_window_show(swc);
   printf("window '%s'\n", swc->title ? swc->title : "");
