@@ -1,6 +1,7 @@
 #include "spawn.h"
 #include "hevel.h"
 #include "placement.h"
+#include "../config.h"
 
 struct spawn_request spawn = {0};
 void
@@ -42,5 +43,11 @@ spawn_execute(void)
       _exit(127);
 }
 
+}
+
+void
+spawn_terminal_request(int width, int height)
+{
+  spawn_request_init(term, width, height);
 }
 

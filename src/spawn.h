@@ -16,6 +16,9 @@ struct spawn_request {
 };
 
 void
+spawn_terminal_request(int width, int height);
+
+void
 spawn_request_init(const char *command,
     int width,
     int height

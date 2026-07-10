@@ -40,6 +40,11 @@ placement_overlaps(const struct swc_rectangle *candidate)
 
   if(!swc_window_get_geometry(w->swc, &geometry))
     continue;
+  printf("Against: (%d,%d %ux%u)\n",
+       geometry.x,
+       geometry.y,
+       geometry.width,
+       geometry.height);
 // this is the conversion to make data stable and to remove redundancy
   int32_t candidate_right =
     candidate->x + (int32_t) candidate->width;
@@ -56,6 +61,9 @@ placement_overlaps(const struct swc_rectangle *candidate)
       candidate->x >= geometry_right ||
       candidate_bottom <= geometry.y ||
       candidate->y >= geometry_bottom)) {
+       printf("Checking window: %s\n",
+           w->swc->title ? w->swc->title : "(no title)");
+      printf("OVERLAP\n");
     return true;
   }
 }
@@ -92,6 +100,12 @@ placement_compute(void)
       i++) {
     candidate.x = center_x - candidate.width / 2 + placement_offsets[i].dx;
     candidate.y = center_y - candidate.height / 2 + placement_offsets[i].dy;
+    printf("Trying #%zu: (%d,%d %ux%u)\n",
+       i,
+       candidate.x,
+       candidate.y,
+       candidate.width,
+       candidate.height);
   
   if (!placement_overlaps(&candidate)) {
     spawn.geometry = candidate;

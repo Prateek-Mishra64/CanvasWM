@@ -2,6 +2,7 @@
 #include "hevel.h"
 #include "input.h"
 #include "spawn.h"
+#include "../config.h"
 
 int
 select_tick(void *data)
@@ -39,7 +40,7 @@ spawn_term_select(const struct swc_rectangle *geometry)
 {
   (void)geometry;
 
-  spawn_request_init(term, 1000, 800);
+  spawn_terminal_request(1000, 800);
   spawn_execute();
 }
 
