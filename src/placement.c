@@ -25,51 +25,29 @@ static const struct {
 
 };
 
-static bool
-placement_overlaps(const struct swc_rectangle *candidate);
-
-
-static bool
-placement_overlaps(const struct swc_rectangle *candidate) 
+static struct window *
+placement_origin_occupant(const struct swc_rectangle *origin)
 {
-  struct window *w;
-  struct swc_rectangle geometry;
-  
-  wl_list_for_each(w, &compositor.windows, link)
-  {
+    struct window *w;
+    struct swc_rectangle geometry;
 
-  if(!swc_window_get_geometry(w->swc, &geometry))
-    continue;
-  printf("Against: (%d,%d %ux%u)\n",
-       geometry.x,
-       geometry.y,
-       geometry.width,
-       geometry.height);
-// this is the conversion to make data stable and to remove redundancy
-  int32_t candidate_right =
-    candidate->x + (int32_t) candidate->width;
-  int32_t candidate_bottom =
-    candidate->y + (int32_t) candidate->height;
+    wl_list_for_each(w, &compositor.windows, link)
+    {
+        if (!swc_window_get_geometry(w->swc, &geometry))
+            continue;
 
-  int32_t geometry_right =
-    geometry.x + (int32_t) geometry.width;
-  int32_t geometry_bottom =
-    geometry.y + (int32_t) geometry.height;
+        /* Does this window cover the origin? */
+        if (!(origin->x + (int32_t)origin->width  <= geometry.x ||
+              origin->x >= geometry.x + (int32_t)geometry.width ||
+              origin->y + (int32_t)origin->height <= geometry.y ||
+              origin->y >= geometry.y + (int32_t)geometry.height))
+        {
+            return w;
+        }
+    }
 
-  
-  if (!(candidate_right <= geometry.x ||
-      candidate->x >= geometry_right ||
-      candidate_bottom <= geometry.y ||
-      candidate->y >= geometry_bottom)) {
-       printf("Checking window: %s\n",
-           w->swc->title ? w->swc->title : "(no title)");
-      printf("OVERLAP\n");
-    return true;
-  }
+    return NULL;
 }
-  return false;
-}
-
 
 void
 placement_compute(void)
@@ -95,31 +73,21 @@ placement_compute(void)
   
   struct swc_rectangle candidate = spawn.geometry;
 
-  for (size_t i = 0;
-      i < sizeof(placement_offsets) / sizeof(placement_offsets[0]);
-      i++) {
-    candidate.x = center_x - candidate.width / 2 + placement_offsets[i].dx;
-    candidate.y = center_y - candidate.height / 2 + placement_offsets[i].dy;
-    printf("Trying #%zu: (%d,%d %ux%u)\n",
-       i,
-       candidate.x,
-       candidate.y,
-       candidate.width,
-       candidate.height);
-  
-  if (!placement_overlaps(&candidate)) {
-    spawn.geometry = candidate;
-    return;
-  }
-
-}
-
   candidate.x = center_x - candidate.width / 2;
   candidate.y = center_y - candidate.height / 2;
 
+  struct window *occupant = placement_origin_occupant(&candidate);
+
+    if (occupant) {
+      struct swc_rectangle geom;
+
+      if (swc_window_get_geometry(occupant->swc, &geom)) {
+          candidate.x = geom.x + 40;
+          candidate.y = geom.y + 40;
+      }
+  }
+
   spawn.geometry = candidate;
-
-
 }
 
 
