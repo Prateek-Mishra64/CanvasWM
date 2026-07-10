@@ -37,9 +37,10 @@ stop_select(void)
 void
 spawn_term_select(const struct swc_rectangle *geometry)
 {
-  input.spawn_pending = true;
-  input.spawn_geometry = *geometry;
+  (void)geometry;
 
+  input.spawn_pending = true;
+  spawn_request_init(term, 800, 800);
   spawn_execute();
 }
 

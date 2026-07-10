@@ -207,6 +207,13 @@ newwindow(struct swc_window *swc)
   /* get pid and check conf for term spawn */
   if (enable_terminal_spawning) {
     w->pid = swc_window_get_pid(swc);
+    printf("window pid = %d\n", w->pid);
+    fflush(stdout);
+
+    if (w->pid == spawn.pid) {
+      swc_window_set_geometry(swc, &spawn.geometry);
+      spwan.pending = false;
+    }
 
     if (w->pid > 0) {
       /* im so fucking dumb, we need to walk up the proc tree to get the term,

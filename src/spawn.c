@@ -14,6 +14,8 @@ spawn_request_init(const char *command, int width, int height)
   spawn.geometry.height = height;
 
   placement_compute();
+
+  spawn.pending = true;
 }
 
 void
@@ -22,6 +24,10 @@ spawn_execute(void)
   pid_t pid;
 
   pid = fork();
+  printf("spawn pid = %d\n", spawn.pid);
+  fflush(stdout);
+  if (pid > 0)
+    spawn.pid = pid;
 
   if(pid == 0) {
     execlp(term,
