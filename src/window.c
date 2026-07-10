@@ -3,6 +3,8 @@
 #include "input.h"
 #include "scroll.h"
 #include "zoom.h"
+#include "spawn.h"
+
 
 static pid_t
 get_parent_pid(pid_t pid);
@@ -172,11 +174,12 @@ windowappidchanged(void *data)
 
   if (!is_select) return;
 
-  geometry = input.spawn_geometry;
-  if (geometry.width < 50) geometry.width = 50;
-  if (geometry.height < 50) geometry.height = 50;
+  geometry.x = spawn.x;
+  geometry.y = spawn.y;
+
+  geometry.width = spawn.width;
+  geometry.height = spawn.height;
   swc_window_set_geometry(w->swc, &geometry);
-  input.spawn_pending = false;
 }
 
 static const struct swc_window_handler windowhandler = {
@@ -240,11 +243,12 @@ newwindow(struct swc_window *swc)
   }
 
   if (is_select) {
-    geometry = input.spawn_geometry;
-    if (geometry.width < 50) geometry.width = 50;
-    if (geometry.height < 50) geometry.height = 50;
+    geometry.x = spawn.x;
+    geometry.y = spawn.y;
+    geometry.width = spawn.width;
+    geometry.height = spawn.height;
+
     swc_window_set_geometry(swc, &geometry);
-    input.spawn_pending = false;
   }
   swc_window_show(swc);
   printf("window '%s'\n", swc->title ? swc->title : "");

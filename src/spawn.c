@@ -1,13 +1,19 @@
 #include "spawn.h"
 #include "hevel.h"
+#include "placement.h"
 
 struct spawn_request spawn = {0};
 void
 spawn_request_init(const char *command, int width, int height)
 {
-  spawn.command = command;
+  snprintf(spawn.command, 
+      sizeof(spawn.command), 
+      "%s",
+      command);
   spawn.width = width;
   spawn.height = height;
+
+  placement_reserve();
 }
 
 void
