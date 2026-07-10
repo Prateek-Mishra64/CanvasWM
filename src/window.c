@@ -212,7 +212,7 @@ newwindow(struct swc_window *swc)
 
     if (w->pid == spawn.pid) {
       swc_window_set_geometry(swc, &spawn.geometry);
-      spwan.pending = false;
+      spawn.pending = false;
     }
 
     if (w->pid > 0) {

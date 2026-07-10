@@ -10,6 +10,8 @@ spawn_request_init(const char *command, int width, int height)
       sizeof(spawn.command), 
       "%s",
       command);
+  spawn.argv[0] = spawn.command;
+  spawn.argv[1] = NULL;
   spawn.geometry.width = width;
   spawn.geometry.height = height;
 
@@ -30,11 +32,7 @@ spawn_execute(void)
     spawn.pid = pid;
 
   if(pid == 0) {
-    execlp(term,
-        term,
-        term_flag,
-        select_term_app_id,
-        NULL);
+    execvp(spawn.argv[0], spawn.argv);
     _exit(127);
   }
 }

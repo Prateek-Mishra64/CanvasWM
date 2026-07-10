@@ -2,9 +2,11 @@
 #define SPAWN_H
 
 #include "hevel.h"
+#define SPAWN_MAX_ARGS 32
 
 struct spawn_request {
   char command[512];
+  char *argv[SPAWN_MAX_ARGS];
 
   struct swc_rectangle geometry;
 
