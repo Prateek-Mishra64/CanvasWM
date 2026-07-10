@@ -6,6 +6,7 @@ struct spawn_request spawn = {0};
 void
 spawn_request_init(const char *command, int width, int height)
 {
+  memset(&spawn.geometry, 0, sizeof(spawn.geometry));
   snprintf(spawn.command, 
       sizeof(spawn.command), 
       "%s",
@@ -15,9 +16,9 @@ spawn_request_init(const char *command, int width, int height)
   spawn.geometry.width = width;
   spawn.geometry.height = height;
 
+  spawn.pending = true;
   placement_compute();
 
-  spawn.pending = true;
 }
 
 void

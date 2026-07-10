@@ -5,16 +5,6 @@
 #include "zoom.h"
 #include "spawn.h"
 
-
-static pid_t
-get_parent_pid(pid_t pid);
-static struct window *
-find_window_by_pid(pid_t pid);
-static bool
-is_terminal_window(struct window *w);
-static void
-mk_spawn_link(struct window *terminal, struct window *child);
-
 void
 focus_window(struct swc_window *swc, const char *reason)
 {
@@ -130,55 +120,13 @@ void
 windowdestroy(void *data)
 {
   struct window *w = data;
-
-  /* cleanup for term spawn*/
-  if (w->spawn_parent) {
-    struct window *terminal = w->spawn_parent;
-
-    wl_list_remove(&w->spawn_link);
-
-    if (wl_list_empty(&terminal->spawn_children) &&
-        terminal->hidden_for_spawn) {
-      /* restore term */
-      swc_window_show(terminal->swc);
-      swc_window_set_geometry(terminal->swc, &terminal->saved_geometry);
-      terminal->hidden_for_spawn = false;
-
-      /* focus terminal */
-      focus_window(terminal->swc, "spawn_child_destroyed");
-    }
-  }
-
-  if (!wl_list_empty(&w->spawn_children)) {
-    struct window *child, *tmp;
-    wl_list_for_each_safe(child, tmp, &w->spawn_children, spawn_link)
-    {
-      child->spawn_parent = NULL;
-      wl_list_remove(&child->spawn_link);
-      wl_list_init(&child->spawn_link);
-    }
-  }
-
   if (compositor.focused == w->swc) focus_window(NULL, "destroy");
   wl_list_remove(&w->link);
   free(w);
 }
 
-static void
-windowappidchanged(void *data)
-{
-  struct window *w = data;
-  bool is_select = input.spawn_pending && w->swc->app_id &&
-                   strcmp(w->swc->app_id, select_term_app_id) == 0;
-
-  if (!is_select) return;
-
-  swc_window_set_geometry(w->swc, &spawn.geometry);
-}
-
 static const struct swc_window_handler windowhandler = {
     .destroy = windowdestroy,
-    .app_id_changed = windowappidchanged,
 };
 
 void
@@ -190,10 +138,6 @@ newwindow(struct swc_window *swc)
   if (!w) return;
   w->swc = swc;
   w->pid = 0;
-  w->spawn_parent = NULL;
-  wl_list_init(&w->spawn_children);
-  wl_list_init(&w->spawn_link);
-  w->hidden_for_spawn = false;
   w->sticky = false;
 
   wl_list_insert(&compositor.windows, &w->link);
@@ -201,42 +145,12 @@ newwindow(struct swc_window *swc)
   swc_window_set_stacked(swc);
   swc_window_set_border(swc, inner_border_color_inactive, inner_border_width,
                         outer_border_color_inactive, outer_border_width);
-
-  /* get pid and check conf for term spawn */
-  if (enable_terminal_spawning) {
-    w->pid = swc_window_get_pid(swc);
-
-    if (spawn.pending && w->pid == spawn.pid) {
+  w->pid = swc_window_get_pid(swc);
+  
+  if (spawn.pending && w->pid == spawn.pid) {
       swc_window_set_geometry(swc, &spawn.geometry);
       spawn.pending = false;
     }
-
-    if (w->pid > 0) {
-      /* im so fucking dumb, we need to walk up the proc tree to get the term,
-       * otherwise we just get the shell */
-      pid_t current_pid = w->pid;
-      struct window *terminal = NULL;
-      int depth = 0;
-
-      /* walk up 10 levels */
-      while (depth < 10 && current_pid > 1) {
-        pid_t parent_pid = get_parent_pid(current_pid);
-        if (parent_pid <= 1) break;
-
-        /* check pid against term*/
-        struct window *candidate = find_window_by_pid(parent_pid);
-        if (candidate && is_terminal_window(candidate)) {
-          terminal = candidate;
-          break;
-        }
-
-        current_pid = parent_pid;
-        depth++;
-      }
-
-      if (terminal) mk_spawn_link(terminal, w);
-    }
-  }
 
   swc_window_show(swc);
   printf("window '%s'\n", swc->title ? swc->title : "");
@@ -274,68 +188,4 @@ newscreen(struct swc_screen *swc)
     wl_event_source_timer_update(input.cursor_timer, timerms);
 }
 
-/* helpers for pid*/
-static pid_t
-get_parent_pid(pid_t pid)
-{
-  char path[64];
-  FILE *f;
-  pid_t parent_pid = 0;
 
-  snprintf(path, sizeof(path), "/proc/%d/stat", pid);
-  f = fopen(path, "r");
-  if (!f) return 0;
-
-  /* its like: pid (comm) state ppid ... */
-  fscanf(f, "%*d %*s %*c %d", &parent_pid);
-  fclose(f);
-  return parent_pid;
-}
-
-static struct window *
-find_window_by_pid(pid_t pid)
-{
-  struct window *w;
-
-  wl_list_for_each(w, &compositor.windows, link)
-  {
-    if (w->pid == pid) return w;
-  }
-  return NULL;
-}
-
-static bool
-is_terminal_window(struct window *w)
-{
-  if (!w || !w->swc) return false;
-
-  /* check app_id */
-  if (w->swc->app_id) {
-    for (const char *const *term = terminal_app_ids; *term; term++) {
-      if (strstr(w->swc->app_id, *term)) return true;
-    }
-  }
-
-  /* check title too, because, paranoia */
-  if (w->swc->title) {
-    for (const char *const *term = terminal_app_ids; *term; term++) {
-      if (strstr(w->swc->title, *term)) return true;
-    }
-  }
-
-  return false;
-}
-
-static void
-mk_spawn_link(struct window *terminal, struct window *child)
-{
-  child->spawn_parent = terminal;
-  wl_list_insert(&terminal->spawn_children, &child->spawn_link);
-
-  /* save term geom */
-  if (swc_window_get_geometry(terminal->swc, &terminal->saved_geometry)) {
-    terminal->hidden_for_spawn = true;
-    swc_window_hide(terminal->swc);
-    swc_window_set_geometry(child->swc, &terminal->saved_geometry);
-  }
-}

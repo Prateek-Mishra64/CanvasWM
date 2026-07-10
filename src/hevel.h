@@ -48,12 +48,6 @@ struct window {
   struct wl_list link;
 
   pid_t pid;
-  struct window *spawn_parent;
-  struct wl_list spawn_children;
-  struct wl_list spawn_link;
-  bool hidden_for_spawn;
-  struct swc_rectangle saved_geometry;
-
   bool sticky;
 };
 
@@ -80,7 +74,6 @@ struct input_state {
   struct wl_event_source *cursor_timer;
   int32_t scroll_drag_last_x, scroll_drag_last_y;
   struct wl_event_source *scroll_drag_timer;
-  bool spawn_pending;
   struct swc_rectangle spawn_geometry;
 };
 extern struct input_state input;

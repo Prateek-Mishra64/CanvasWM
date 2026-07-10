@@ -29,7 +29,6 @@ static const char *const cursor_theme = "swc";
 
 /* recommended st-wl/hst (stock st-wl has some issues) or havoc
  * but anything will work just fine */
-static const char *const select_term_app_id = "st-wl-256color";
 static const char *const term = "kitty";
 
 /* a flag for your terminal emulator to setup a windowid
@@ -37,14 +36,10 @@ static const char *const term = "kitty";
  * - for havoc: -i
  * - for everything else: idk
  */
-static const char *const term_flag = "";
 
 /* gui programs take over the geometry of the terminal, broken for xwayland */
-static const bool enable_terminal_spawning = true;
 
 /* define a list of terminals that you use */
-static const char *const terminal_app_ids[] = {"st-wl", "havoc", "kitty",
-                                               NULL};
 
 static const int chord_click_timeout_ms = 250;
 

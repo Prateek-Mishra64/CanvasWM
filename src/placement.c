@@ -57,12 +57,9 @@ placement_overlaps(const struct swc_rectangle *candidate)
       candidate_bottom <= geometry.y ||
       candidate->y >= geometry_bottom)) {
     return true;
+  }
 }
-}
-
-
   return false;
-
 }
 
 
