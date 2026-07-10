@@ -11,6 +11,8 @@ Should be Transparent", taken to their logical extremes. In this sense, hevel
 is a modernization of mouse-driven Unix and Plan 9 window systems such as mux,
 8½, and rio.
 
+CanvasWM treats the canvas origin as a high-speed cache. New windows appear there by default because that's where the user's attention already is. When the origin is occupied, new windows cascade predictably from the occupying window rather than replacing it. Long-lived windows are expected to be moved by the user into their own locations on the infinite canvas.
+
 Unlike those systems, hevel has no menus and is not limited to a single
 screen of space. Instead, the desktop is an infinite plane:
 windows can be created anywhere, and the view can be freely scrolled thru (vertically, or in all axis).
