@@ -1,9 +1,9 @@
-hevel 
+CanvasWm 
 -----
 
 "Make the user interface invisible"
 
-hevel is a scrollable, floating window manager for Wayland that uses mouse
+CanvasWm is a custom fork or spinoff of Hevel a scrollable, floating window manager for Wayland that uses mouse
 chords for all commands.
 
 Its design is inspired by ideas from Rob Pike's 1988 paper, "Window Systems 
