@@ -48,7 +48,7 @@ binding_action(void *data,
         action_execute(binding->action);
         break;
 
-      case EXEC_ACTION:
+      case BIND_EXEC:
         spawn_launch(binding->command, 1000, 800);
         break;
     }

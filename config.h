@@ -48,10 +48,10 @@ static const struct binding bindings[] = {
     ACTION_BIND(MOD_SUPER | MOD_SHIFT,
          XKB_KEY_Q,
          ACTION_QUIT),
-    EXEC_BIND(MOD, XKB_KEY_t, "kitty"),
-    EXEC_BIND(MOD, XKB_KEY_f, "librewolf"),
-    EXEC_BIND(MOD, XKB_KEY_g, "nautilus --new-window"),
-    EXEC_BIND(MOD, XKB_KEY_space, "rofi -show drun"),
+    EXEC_BIND(MOD_SUPER, XKB_KEY_t, "kitty"),
+    EXEC_BIND(MOD_SUPER, XKB_KEY_f, "librewolf"),
+    EXEC_BIND(MOD_SUPER, XKB_KEY_g, "nautilus --new-window"),
+    EXEC_BIND(MOD_SUPER, XKB_KEY_space, "rofi -show drun"),
 
 };
 /* cursor themes:

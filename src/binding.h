@@ -8,7 +8,7 @@
 
 enum binding_type {
   BIND_ACTION,
-  BIND_EXEC.
+  BIND_EXEC,
 };
 
 enum modifier {
