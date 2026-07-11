@@ -266,12 +266,11 @@ handle_custom(uint32_t b, bool pressed, bool was_left, uint32_t time,
       if (w->swc == compositor.focused) {
 
         if (strcmp(custom_chord, "sticky") == 0)
-          w->sticky = !w->sticky;
+          window_toggle_sticky(); 
         
 		else if (strcmp(custom_chord, "fullscreen") == 0) {
-          swc_window_set_fullscreen(compositor.focused,
-                                    compositor.current_screen->swc);
-        }
+            window_toggle_fullscreen();             
+    }
 
         else if (strcmp(custom_chord, "jump") == 0) {
           bool state = focus_center;

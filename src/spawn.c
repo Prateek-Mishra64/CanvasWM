@@ -39,8 +39,6 @@ spawn_request_prepare(const char *command, int width, int height)
 void
 spawn_execute(void)
 {
-    printf("[spawn_execute]\n");
-    fflush(stdout);
     if (!spawn.pending)
         return;
 
@@ -52,14 +50,10 @@ spawn_execute(void)
 
     if (pid > 0) {
         spawn.pid = pid;
-
-        printf("saved spawn pid = %d\n", spawn.pid);
         return;
     }
 
     if (pid == 0) {
-        printf("child executing %s\n", spawn.argv[0]);
-
         execvp(spawn.argv[0], spawn.argv);
 
         perror("execvp");

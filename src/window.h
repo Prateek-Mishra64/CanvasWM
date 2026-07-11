@@ -19,4 +19,14 @@ newwindow(struct swc_window *swc);
 void
 newscreen(struct swc_screen *swc);
 
+void
+window_toggle_sticky(void);
+
+void
+window_toggle_fullscreen(void);
+
+void
+compositor_quit(void);
+
+
 #endif

@@ -5,6 +5,23 @@
 #include "zoom.h"
 #include "spawn.h"
 
+
+
+static struct window *
+focused_window(void)
+{
+    struct window *w;
+
+    wl_list_for_each(w, &compositor.windows, link) {
+        if (w->swc == compositor.focused)
+            return w;
+    }
+
+    return NULL;
+}
+
+
+
 void
 focus_window(struct swc_window *swc, const char *reason)
 {
@@ -188,4 +205,31 @@ newscreen(struct swc_screen *swc)
     wl_event_source_timer_update(input.cursor_timer, timerms);
 }
 
+void
+compositor_quit(void)
+{
+    wl_display_terminate(compositor.display);
+}
 
+
+void
+window_toggle_sticky(void)
+{
+    struct window *w = focused_window();
+
+    if (!w)
+        return;
+
+    w->sticky = !w->sticky;
+}
+
+void
+window_toggle_fullscreen(void)
+{
+    if (!compositor.focused)
+        return;
+
+    swc_window_set_fullscreen(
+        compositor.focused,
+        compositor.current_screen->swc);
+}

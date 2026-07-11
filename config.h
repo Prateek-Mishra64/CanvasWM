@@ -31,11 +31,9 @@ static const uint32_t select_box_border = 2;
 /*############################# EDIT CANVAS SYSTEM BINDS HERE #############################################*/
 static const struct binding bindings[] = {
 
-    BIND(MOD_SUPER, XKB_KEY_Return, ACTION_SPAWN),
+    BIND(MOD_SUPER, XKB_KEY_f, ACTION_WINDOW_FULLSCREEN_TOGGLE),
 
-    BIND(MOD_SUPER, XKB_KEY_f, ACTION_FULLSCREEN_WINDOW),
-
-    BIND(MOD_SUPER, XKB_KEY_s, ACTION_STICKY_WINDOW),
+    BIND(MOD_SUPER, XKB_KEY_s, ACTION_WINDOW_STICKY_TOGGLE),
 
     BIND(MOD_SUPER | MOD_SHIFT,
          XKB_KEY_Q,
