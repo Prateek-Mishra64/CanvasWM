@@ -92,3 +92,55 @@ require minor Makefile adjustments. Depending on your setup, you may want to
 tweak neuswc itself via config.mk before compiling hevel.
 
 hevel-specific configuration is done at compile time via config.h.
+j
+
+
+
+In file included from src/hevel.c:2:
+src/binding.h:10:3: error: expected specifier-qualifier-list before ‘BIND_ACTION’
+   10 |   BIND_ACTION,
+      |   ^~~~~~~~~~~
+src/binding.h:16:5: error: unknown type name ‘xkb_keysym_t’
+   16 |     xkb_keysym_t key;
+      |     ^~~~~~~~~~~~
+src/binding.h:18:10: error: ‘binding_type’ defined as wrong kind of tag
+   18 |     enum binding_type type;
+      |          ^~~~~~~~~~~~
+src/binding.h:18:23: error: field ‘type’ has incomplete type
+   18 |     enum binding_type type;
+      |                       ^~~~
+src/hevel.c: In function ‘main’:
+src/hevel.c:107:3: error: implicit declaration of function ‘binding_intialize’; did you mean ‘binding_initialize’? [-Wimplicit-function-declaration]
+  107 |   binding_intialize();
+      |   ^~~~~~~~~~~~~~~~~
+      |   binding_initialize
+In file included from src/binding.c:3:
+src/binding.h:10:3: error: expected specifier-qualifier-list before ‘BIND_ACTION’
+   10 |   BIND_ACTION,
+      |   ^~~~~~~~~~~
+src/binding.h:16:5: error: unknown type name ‘xkb_keysym_t’
+   16 |     xkb_keysym_t key;
+      |     ^~~~~~~~~~~~
+src/binding.h:18:10: error: ‘binding_type’ defined as wrong kind of tag
+   18 |     enum binding_type type;
+      |          ^~~~~~~~~~~~
+src/binding.h:18:23: error: field ‘type’ has incomplete type
+   18 |     enum binding_type type;
+      |                       ^~~~
+src/binding.c: In function ‘binding_action’:
+src/binding.c:25:12: error: ‘BIND_ACTION’ undeclared (first use in this function)
+   25 |       case BIND_ACTION:
+      |            ^~~~~~~~~~~
+src/binding.c:25:12: note: each undeclared identifier is reported only once for each function it appears in
+src/binding.c:28:12: error: ‘BIND_EXEC’ undeclared (first use in this function)
+   28 |       case BIND_EXEC:
+      |            ^~~~~~~~~
+src/binding.c: In function ‘binding_initialize’:
+src/binding.c:39:21: error: implicit declaration of function ‘LENGTH’ [-Wimplicit-function-declaration]
+   39 |     for (i = 0; i < LENGTH(bindings); ++i) {
+      |                     ^~~~~~
+src/binding.c:39:28: error: ‘bindings’ undeclared (first use in this function); did you mean ‘binding’?
+   39 |     for (i = 0; i < LENGTH(bindings); ++i) {
+      |                            ^~~~~~~~
+      |                            binding
+make: *** [Makefile:21: hevel] Error 1
