@@ -33,6 +33,8 @@ binding_action(void *data,
                uint32_t value,
                uint32_t state)
 {
+  printf("binding callback\n");
+  fflush(stdout);
     (void)time;
     (void)value;
     (void)state;
@@ -46,6 +48,8 @@ binding_action(void *data,
 void
 binding_initialize(void)
 {
+  printf("Initializing %zu bindings\n", LENGTH(bindings));
+  fflush(stdout);
     for (size_t i = 0; i < LENGTH(bindings); ++i) {
         swc_add_binding(
             SWC_BINDING_KEY,
@@ -53,5 +57,7 @@ binding_initialize(void)
             bindings[i].key,
             binding_action,
             (void *)&bindings[i]);    
+        printf("binding %zu -> ret=%d\n", i, ret);
+        fflush(stdout);
     }
 }
