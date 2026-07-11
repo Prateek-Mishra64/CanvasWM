@@ -51,9 +51,9 @@ binding_initialize(void)
   printf("Initializing %zu bindings\n", LENGTH(bindings));
   fflush(stdout);
     for (size_t i = 0; i < LENGTH(bindings); ++i) {
-        swc_add_binding(
+        int ret = swc_add_binding(
             SWC_BINDING_KEY,
-            binding_translate_modifiers(bindings[i].modifiers),
+            binding_modifires_to_backend(bindings[i].modifiers),
             bindings[i].key,
             binding_action,
             (void *)&bindings[i]);    
