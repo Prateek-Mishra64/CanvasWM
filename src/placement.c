@@ -102,24 +102,22 @@ placement_compute(void)
 
     struct window *cascade_parent = NULL;
 
-    switch (placement_decide(&candidate, &cascade_parent)) {
+    
+    while (placement_decide(&candidate, &cascade_parent)
+        == PLACEMENT_CASCADE) {
 
-    case PLACEMENT_ORIGIN:
+    struct swc_rectangle geometry;
+
+    if (!cascade_parent)
         break;
 
-    case PLACEMENT_CASCADE: {
-        struct swc_rectangle geometry;
-
-        if (cascade_parent &&
-            swc_window_get_geometry(cascade_parent->swc, &geometry)) {
-
-            candidate.x = geometry.x + PLACEMENT_OFFSET;
-            candidate.y = geometry.y + PLACEMENT_OFFSET;
-        }
-
+    if (!swc_window_get_geometry(cascade_parent->swc, &geometry))
         break;
-    }
-    }
+
+    candidate.x = geometry.x + PLACEMENT_OFFSET;
+    candidate.y = geometry.y + PLACEMENT_OFFSET;
+}
+
 
     spawn.geometry = candidate;
 }
