@@ -4,12 +4,11 @@
 #include "hevel.h"
 #include "spawn.h"
 
-#include <linux/input-event-codes.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 
 static uint32_t
-binding_translate_modifiers(uint32_t modifiers)
+binding_modifires_to_backend(uint32_t modifiers)
 {
     uint32_t swc_modifiers = 0;
 
