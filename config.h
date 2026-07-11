@@ -8,12 +8,22 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 #define LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
-#define BIND(modifier, keysym, action_enum) \
-    {                                       \
-        .modifiers = (modifier),            \
-        .key = (keysym),                    \
-        .action = (action_enum),            \
-    }
+#define ACTION_BIND(modifier, keysym, act) \
+{                                          \
+    .modifiers = (modifier),               \
+    .key = (keysym),                       \
+    .type = BIND_ACTION,                   \
+    .action = (act),                       \
+}
+
+#define EXEC_BIND(modifier, keysym, cmd) \
+{                                        \
+    .modifiers = (modifier),             \
+    .key = (keysym),                     \
+    .type = BIND_EXEC,                   \
+    .command = (cmd),                    \
+}
+
 
 static const uint32_t background_color = 0xff242933;
 
@@ -31,13 +41,18 @@ static const uint32_t select_box_border = 2;
 /*############################# EDIT CANVAS SYSTEM BINDS HERE #############################################*/
 static const struct binding bindings[] = {
 
-    BIND(MOD_SUPER, XKB_KEY_f, ACTION_WINDOW_FULLSCREEN_TOGGLE),
+    ACTION_BIND(MOD_SUPER, XKB_KEY_period, ACTION_WINDOW_FULLSCREEN_TOGGLE),
 
-    BIND(MOD_SUPER, XKB_KEY_s, ACTION_WINDOW_STICKY_TOGGLE),
+    ACTION_BIND(MOD_SUPER, XKB_KEY_comma, ACTION_WINDOW_STICKY_TOGGLE),
 
-    BIND(MOD_SUPER | MOD_SHIFT,
+    ACTION_BIND(MOD_SUPER | MOD_SHIFT,
          XKB_KEY_Q,
          ACTION_QUIT),
+    EXEC_BIND(MOD, XKB_KEY_t, "kitty"),
+    EXEC_BIND(MOD, XKB_KEY_f, "librewolf"),
+    EXEC_BIND(MOD, XKB_KEY_g, "nautilus --new-window"),
+    EXEC_BIND(MOD, XKB_KEY_space, "rofi -show drun"),
+
 };
 /* cursor themes:
  * - "swc"  : use swc's built-in cursor, client cursors allowed, no per-chord

@@ -42,7 +42,16 @@ binding_action(void *data,
 
     const struct binding *binding = data;
 
-    action_execute(binding->action);
+    switch (binding->type) {
+
+      case BIND_ACTION:
+        action_execute(binding->action);
+        break;
+
+      case EXEC_ACTION:
+        spawn_launch(binding->command, 1000, 800);
+        break;
+    }
 }
 
 

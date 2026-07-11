@@ -1,203 +1,283 @@
-# Hevel+
 
-## Vision
 
-Hevel+ is an infinite canvas window manager.
+Refactor 2 – Paint Brush
+Objective
 
-The keyboard creates windows.
-The mouse manipulates windows and the canvas.
+Decouple Canvas input handling from compositor logic by introducing a configurable, action-driven input architecture.
 
-The compositor assists with initial placement only. After a window is created,
-its position is entirely controlled by the user.
+The goal of this refactor was to make every keyboard interaction pass through a common abstraction layer while exposing a clean public API for both Canvas System Actions and user-defined application launching.
 
----
-
-# Design Principles
-
-- Infinite world
-- No workspaces
-- No layouts
-- Predictable spawning
-- Manual organization
-- Small independent modules
-- Extend Hevel, don't rewrite it
-
----
-
-# Responsibilities
-
-## Keyboard
-
-Responsible for requesting new applications.
-
-Examples:
-
-- Terminal
-- Browser
-- Launcher
-- File Manager
-
-Keyboard never computes placement.
-
----
-
-## Spawn
-
-Responsible for application launch requests.
-
-Stores:
-
-- command
-- width
-- height
-
-Spawn does not know where the window will appear.
-
----
-
-## Placement
-
-Responsible only for coordinates.
-
-Input:
-
-Current viewport
-
-Output:
-
-x
-y
-
-Rules:
-
-1. Spawn at viewport center.
-2. If center overlaps another window,
-   offset slightly.
-3. If no nearby position is available,
-   spawn centered on top.
-
-Placement never launches applications.
-
----
-
-## Window
-
-Responsible for applying geometry.
-
-Geometry =
-
-x
-y
-width
-height
-
-Window never computes placement.
-
----
-
-## Mouse
-
-Responsible for manipulating the world.
-
-- Move windows
-- Resize windows
-- Pan canvas
-- Zoom canvas
-
-Mouse never launches applications.
-
----
-
-# Spawn Pipeline
-
+Architecture Before
 Keyboard
     ↓
-Spawn Request
-(command, width, height)
+input.c / hevel.c
     ↓
-Placement
-(x, y)
+Direct compositor logic
     ↓
+Window manipulation
+
+Problems:
+
+Hardcoded keybindings.
+Logic duplicated across input handlers.
+Users had to modify compositor source to change bindings.
+Input and compositor logic were tightly coupled.
+External application spawning and Canvas actions were mixed together.
+Architecture After
+Canvas System Pipeline
+Keyboard
+        ↓
+Binding
+        ↓
+Action Dispatcher
+        ↓
+Canvas Subsystems
+        ↓
+Window / Viewport / Compositor
+External Application Pipeline
+Keyboard
+        ↓
+Binding
+        ↓
+Spawn API
+        ↓
+Placement Engine
+        ↓
+fork()
+        ↓
+execvp()
+
+Canvas System Actions and user application spawning are now independent systems.
+
+Public Input API
+
+Users now configure bindings exclusively through config.h.
+
+Canvas exposes backend-independent modifier constants:
+
+MOD_SUPER
+MOD_SHIFT
+MOD_CTRL
+MOD_ALT
+
+instead of exposing SWC-specific modifier masks.
+
+Backend translation is handled internally by the binding subsystem.
+
+Binding Subsystem
+
+Introduced:
+
+binding.h
+binding.c
+binding_initialize()
+
+Responsibilities:
+
+Register all keyboard bindings.
+Translate Canvas modifier masks into backend modifier masks.
+Dispatch bindings into either Canvas Actions or application spawning.
+
+All keyboard registration has been centralized.
+
+hevel.c no longer contains compositor-specific keyboard bindings.
+
+Action System
+
+Introduced:
+
+action.h
+action.c
+action_execute()
+
+Responsibilities:
+
+Execute compositor functionality.
+Dispatch requests into subsystem implementations.
+Serve as the central API for every Canvas operation.
+
+The action system contains only compositor behavior.
+
+External applications are intentionally excluded.
+
+Window Subsystem Extraction
+
+Moved window-specific behavior out of input.c.
+
+Extracted:
+
+window_toggle_sticky()
+window_toggle_fullscreen()
+
+Mouse gestures and keyboard actions now reuse the same subsystem implementation.
+
+Spawn API
+
+Introduced a generic spawn pipeline:
+
+spawn_launch()
+        ↓
+spawn_request_prepare()
+        ↓
+placement_compute()
+        ↓
+spawn_execute()
+
+Responsibilities:
+
+Process spawning requests.
+Compute initial placement.
+Execute the application.
+
+The spawn subsystem is now independent of the input system.
+
+Placement Integration
+
+The spawn subsystem now automatically integrates with the placement engine.
+
+New applications inherit Canvas placement behavior without requiring input-specific logic.
+
+Modifier Abstraction
+
+Removed public dependency on SWC modifier constants.
+
+Instead of:
+
+SWC_MOD_LOGO
+
+users configure:
+
+MOD_SUPER
+
+Modifier translation occurs exclusively inside the binding subsystem.
+
+Input Decoupling
+
+Input devices no longer implement compositor behavior.
+
+They only request actions.
+
+Current direction:
+
+Keyboard
+Mouse
+Trackpad
+IPC
+Search Palette
+
+↓
+
+Action Dispatcher
+
+Every future input method will invoke the same Canvas API.
+
+Bug Fixes During Refactor
+
+Resolved:
+
+Duplicate spawn execution caused by both key press and key release triggering bindings.
+Backend modifier leakage into public configuration.
+Binding registration centralization.
+Generic spawn pipeline integration.
+Window subsystem extraction.
+Current Public API
+Canvas System Actions
+
+Current action categories:
+
+Viewport
+
 Window
-(x, y, width, height)
-    ↓
-Application appears
 
----
+Focus
 
-# Module Layout
+Zoom
 
-src/
+Compositor
 
-hevel.c
-    Startup
+These actions manipulate Canvas itself.
 
-input.c
-    Mouse input
+User Actions
 
-spawn.c
-    Spawn requests
+Application launching is handled separately through the Spawn API.
 
-placement.c
-    Initial placement
+This distinction separates:
 
-window.c
-    Window lifecycle
+Canvas behavior
 
-scroll.c
-    Canvas movement
+from
 
-zoom.c
-    Zoom
+User applications
+Design Principles Established
+Input does not implement behavior.
 
-select.c
-    Existing selection system
+Input requests actions.
 
----
+Actions dispatch.
 
-# Current Plan
+Subsystems implement.
 
-Phase 1
+Canvas owns compositor behavior.
 
-- Generic spawn request
-- Placement engine
-- Keyboard spawning
+Spawn owns application launching.
 
-Phase 2
+Public API is backend independent.
 
-- Fuzzel integration
-- Automatic placement
-- Fullscreen improvements
+Users should never need to know SWC exists.
 
-Phase 3
+Future Compatibility
 
-- Application rules
-- Session startup
-- Wallpaper
-- Notifications
+This architecture provides the foundation for:
 
----
+Mouse bindings
+Trackpad gestures
+Search Palette
+Window search/jump
+IPC
+Plugins
+External automation
+Multiple spawn clients
 
-# Important Decisions
+All future features will integrate through the existing Action and Spawn APIs.
 
-✓ Keep Hevel architecture.
+Refactor Status
+Completed
+Binding subsystem
+Action dispatcher
+Backend-independent modifier API
+Window subsystem extraction
+Spawn pipeline
+Placement integration
+Configurable keybindings
+Fullscreen action
+Sticky action
+Quit action
+Keyboard architecture
+Next Milestone
+Major Core Features 1 — Behaviour Defining
 
-✓ Preserve existing terminal spawning.
+This milestone focuses on defining Canvas' unique interaction model rather than refactoring its internals.
 
-✓ Preserve rectangle selection until replacement is complete.
+Primary areas:
 
-✓ Placement returns only coordinates.
-
-✓ Width and height belong to Spawn Request.
-
-✓ New windows spawn near viewport center.
-
-✓ Mouse is reserved for world manipulation.
-
-✓ Keyboard is reserved for actions.
-
-
-
-
+Navigation
+Keyboard viewport navigation
+Hybrid keyboard + mouse navigation
+Trackpad gesture navigation
+Directional focus movement
+Window jump/search
+Smooth viewport movement
+Application State
+Fullscreen persistence independent of navigation
+Preserve application presentation state while moving through the canvas
+Focus loss without presentation changes
+Stable window state across viewport movement
+Spawning
+EXEC_BIND
+Multiple Spawn API clients
+Service-initiated spawning
+Multiple window support
+Rich spawn requests
+Future launcher and IPC integration
 
 
