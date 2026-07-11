@@ -23,6 +23,9 @@ enum action {
   ACTION_FOCUS_NEXT,
   ACTION_FOCUS_PREVIOUS,
 
+  ACTION_SPAWN,
+  ACTION_QUIT,
+
 };
 
 void

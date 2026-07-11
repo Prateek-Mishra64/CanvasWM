@@ -11,6 +11,10 @@ action_execute(enum action action)
     case ACTION_NONE:
       break;
 
+    case ACTION_SPAWN:
+      spawn_launch(term, 1000, 800);
+      break;
+
     default:
       break;
   }

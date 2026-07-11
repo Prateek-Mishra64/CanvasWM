@@ -1,13 +1,32 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "binding.h"
-#include "../config.h"
+#include "hevel.h"
+#include "spawn.h"
 
 #include <linux/input-event-codes.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
-#define MOD_SUPER SWC_MOD_LOGO
 
+static uint32_t
+binding_translate_modifiers(uint32_t modifiers)
+{
+    uint32_t swc_modifiers = 0;
+
+    if (modifiers & MOD_SUPER)
+        swc_modifiers |= SWC_MOD_LOGO;
+
+    if (modifiers & MOD_SHIFT)
+        swc_modifiers |= SWC_MOD_SHIFT;
+
+    if (modifiers & MOD_CTRL)
+        swc_modifiers |= SWC_MOD_CTRL;
+
+    if (modifiers & MOD_ALT)
+        swc_modifiers |= SWC_MOD_ALT;
+
+    return swc_modifiers;
+}
 
 static void
 binding_action(void *data,
@@ -19,31 +38,21 @@ binding_action(void *data,
     (void)value;
     (void)state;
 
-    const struct binding *binding = data; 
+    const struct binding *binding = data;
 
-    switch (binding->type) {
-      case BIND_ACTION:
-        action_execute(binding-> action);
-        break;
-      case BIND_EXEC:
-        spawn_launch(binding->command, 1000, 800);
-        break;
-    }
+    action_execute(binding->action);
 }
+
 
 void
 binding_initialize(void)
 {
-    size_t i;
-
-    for (i = 0; i < LENGTH(bindings); ++i) {
-
+    for (size_t i = 0; i < LENGTH(bindings); ++i) {
         swc_add_binding(
             SWC_BINDING_KEY,
-            bindings[i].modifiers,
+            binding_translate_modifiers(bindings[i].modifiers),
             bindings[i].key,
             binding_action,
-            (void *)&bindings[i]);
+            (void *)&bindings[i]);    
     }
 }
-

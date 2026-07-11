@@ -104,7 +104,7 @@ main(void)
   }
 
   maybe_enable_nein_cursor_theme();
-  binding_intialize();
+//  binding_initialize();
 
   swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO | SWC_MOD_SHIFT, XKB_KEY_q,
                   quit, NULL);
