@@ -4,6 +4,15 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "src/binding.h"
+#include <xkbcommon/xkbcommon-keysyms.h>
+#define LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+
+#define ACTION_BIND(mod, key, act) \
+    { .modifiers = (mod), .key = (key), .type = BIND_ACTION, .action = (act) }
+
+#define EXEC_BIND(mod, key, cmd) \
+    { .modifiers = (mod), .key = (key), .type = BIND_EXEC, .command = (cmd) }
 
 static const uint32_t background_color = 0xff242933;
 
@@ -18,6 +27,17 @@ static const uint32_t inner_border_width = 1;
 
 static const uint32_t select_box_color = 0xffffffff;
 static const uint32_t select_box_border = 2;
+/*############################# EDIT CANVAS SYSTEM BINDS HERE #############################################*/
+static const struct binding bindings[] = {
+
+    ACTION_BIND(SWC_MOD_LOGO, XKB_KEY_f, ACTION_FULLSCREEN_WINDOW),
+    ACTION_BIND(SWC_MOD_LOGO, XKB_KEY_s, ACTION_STICKY_WINDOW),
+    EXEC_BIND(SWC_MOD_LOGO, XKB_KEY_Space, "rofi -show drun")
+    EXEC_BIND(SWC_MOD_LOGO, XKB_KEY_t, "kitty"),
+    EXEC_BIND(SWC_MOD_LOGO, XKB_KEY_f, "librewolf"),
+    EXEC_BIND(SWC_MOD_LOGO, XKB_KEY_g, "nautilus --new-window"),
+
+    };
 
 /* cursor themes:
  * - "swc"  : use swc's built-in cursor, client cursors allowed, no per-chord

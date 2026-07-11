@@ -1,4 +1,5 @@
 #include "hevel.h"
+#include "binding.h"
 
 struct compositor_state compositor = {0};
 struct input_state input = {0};
@@ -103,6 +104,7 @@ main(void)
   }
 
   maybe_enable_nein_cursor_theme();
+  binding_intialize();
 
   swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO | SWC_MOD_SHIFT, XKB_KEY_q,
                   quit, NULL);
