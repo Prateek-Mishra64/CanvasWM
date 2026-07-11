@@ -40,8 +40,7 @@ spawn_term_select(const struct swc_rectangle *geometry)
 {
   (void)geometry;
 
-  spawn_terminal_request(1000, 800);
-  spawn_execute();
+  spawn_launch(term, 1000, 800)
 }
 
 void

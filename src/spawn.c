@@ -4,50 +4,75 @@
 #include "../config.h"
 
 struct spawn_request spawn = {0};
+
 void
-spawn_request_init(const char *command, int width, int height)
+spawn_launch(const char *command,
+             int width,
+             int height);
+
+void
+spawn_request_prepare(const char *command,
+    int width,
+    int height);
+
+void
+spawn_execute(void);
+
+void
+spawn_request_prepare(const char *command, int width, int height)
 {
   memset(&spawn.geometry, 0, sizeof(spawn.geometry));
+  
   snprintf(spawn.command, 
       sizeof(spawn.command), 
       "%s",
       command);
+  
   spawn.argv[0] = spawn.command;
   spawn.argv[1] = NULL;
   spawn.geometry.width = width;
   spawn.geometry.height = height;
-
   spawn.pending = true;
-  placement_compute();
 
 }
 
 void
 spawn_execute(void)
 {
-  pid_t pid;
-  pid = fork();
+    if (!spawn.pending)
+        return;
 
-  printf("fork returned %d\n", pid);
+    placement_compute();
 
-  if (pid > 0) {
-      spawn.pid = pid;
-      printf("saved spawn pid = %d\n", spawn.pid);
-  }
+    pid_t pid = fork();
 
-  if (pid == 0) {
-      printf("child executing %s\n", spawn.argv[0]);
-      execvp(spawn.argv[0], spawn.argv);
+    printf("fork returned %d\n", pid);
 
-      perror("execvp");
-      _exit(127);
-}
+    if (pid > 0) {
+        spawn.pid = pid;
+        spawn.pending = false;
 
+        printf("saved spawn pid = %d\n", spawn.pid);
+        return;
+    }
+
+    if (pid == 0) {
+        printf("child executing %s\n", spawn.argv[0]);
+
+        execvp(spawn.argv[0], spawn.argv);
+
+        perror("execvp");
+        _exit(127);
+    }
+
+    perror("fork");
 }
 
 void
-spawn_terminal_request(int width, int height)
+spawn_launch(const char *command,
+             int width,
+             int height)
 {
-  spawn_request_init(term, width, height);
+    spawn_request_prepare(command, width, height);
+    spawn_execute();
 }
-
