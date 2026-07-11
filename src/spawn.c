@@ -39,6 +39,8 @@ spawn_request_prepare(const char *command, int width, int height)
 void
 spawn_execute(void)
 {
+    printf("[spawn_execute]\n");
+    fflush(stdout);
     if (!spawn.pending)
         return;
 
@@ -72,6 +74,8 @@ spawn_launch(const char *command,
              int width,
              int height)
 {
+    printf("[spawn_launch] %s\n", command);
+    fflush(stdout);
     spawn_request_prepare(command, width, height);
     spawn_execute();
 }
