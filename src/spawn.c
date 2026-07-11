@@ -50,7 +50,6 @@ spawn_execute(void)
 
     if (pid > 0) {
         spawn.pid = pid;
-        spawn.pending = false;
 
         printf("saved spawn pid = %d\n", spawn.pid);
         return;
