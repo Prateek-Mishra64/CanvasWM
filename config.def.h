@@ -77,6 +77,6 @@ static const bool center_focus = true;
  * - fullscreen: make a window take entire screen
  * - jump: switch focus to the closest window
  */
-static const char *const custom_chord = "sticky";
+static const char *const custom_chord = "fullscreen";
 
 #endif

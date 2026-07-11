@@ -269,7 +269,6 @@ handle_custom(uint32_t b, bool pressed, bool was_left, uint32_t time,
           w->sticky = !w->sticky;
         
 		else if (strcmp(custom_chord, "fullscreen") == 0) {
-          w->sticky = !w->sticky;
           swc_window_set_fullscreen(compositor.focused,
                                     compositor.current_screen->swc);
         }
