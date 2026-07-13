@@ -66,18 +66,6 @@ struct compositor_state {
 };
 extern struct compositor_state compositor;
 
-struct input_state {
-  bool active;
-  int32_t move_start_win_x, move_start_win_y;
-  int32_t move_start_cursor_x, move_start_cursor_y;
-  struct wl_event_source *move_scroll_timer;
-  struct wl_event_source *cursor_timer;
-  int32_t scroll_drag_last_x, scroll_drag_last_y;
-  struct wl_event_source *scroll_drag_timer;
-  struct swc_rectangle spawn_geometry;
-};
-extern struct input_state input;
-
 struct chord_state {
   chord_mode mode;
   bool left, middle, right;
@@ -89,15 +77,6 @@ struct chord_state {
 };
 extern struct chord_state chord;
 
-struct scroll_state {
-  int32_t pending_px, pending_px_x;
-  int32_t rem, rem_x;
-  int8_t cursor_dir;
-  bool active;
-  bool auto_scrolling;
-  struct wl_event_source *timer;
-};
-extern struct scroll_state scroll;
 
 struct zoom_state {
   float target;

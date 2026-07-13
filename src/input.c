@@ -1,519 +1,299 @@
 #include "input.h"
 #include "hevel.h"
-#include "scroll.h"
-#include "select.h"
-#include "window.h"
-#include "zoom.h"
+#include "binding.h"
 
-int
-click_timeout(void *data)
+
+#include <xkbcommon/xkbcommon-keysyms.h>
+#include <xkbcommon/xkbcommon.h>
+
+
+static enum bind_symbol
+normalize_mouse(uint32_t button,
+                bool dragging,
+                bool left_down,
+                bool middle_down,
+                bool right_down)
 {
-  (void)data;
+    if (dragging) {
 
-  if (!chord.pending) return 0;
+        if (left_down && right_down)
+            return MOUSE_LR_CHORD;
 
-  /* don't forward clicks while move chord is active */
-  if (chord.mode == MODE_MOVE) {
-    click_cancel();
-    return 0;
-  }
+        if (left_down)
+            return MOUSE_LEFT_DRAG;
 
-  if (chord.left && chord.right) return 0;
+        if (right_down)
+            return MOUSE_RIGHT_DRAG;
 
-  if (!chord.forwarded) {
-    swc_pointer_send_button(chord.time, chord.button,
-                            WL_POINTER_BUTTON_STATE_PRESSED);
-    chord.forwarded = true;
-  }
+        if (middle_down)
+            return MOUSE_MIDDLE_DRAG;
 
-  return 0;
+        return SYMBOL_NONE;
+    }
+
+    if (left_down)
+        return MOUSE_LEFT_CLICK;
+
+    if (middle_down)
+        return MOUSE_MIDDLE_CLICK;
+
+    if (right_down)
+        return MOUSE_RIGHT_CLICK;
+
+    return SYMBOL_NONE;
 }
 
+
+struct input_state input;
+
+/* Forward normalized input into the binding layer */
 void
-click_cancel(void)
+input_dispatch(enum bind_symbol symbol,
+               bool held)
 {
-  if (chord.timer) {
-    wl_event_source_remove(chord.timer);
-    chord.timer = NULL;
-  }
-  chord.pending = false;
-  chord.forwarded = false;
+    if (symbol == SYMBOL_NONE)
+        return;
+
+    binding_dispatch(input.modifiers, symbol, held);
 }
+
+
+static void
+input_key(enum bind_symbol key,
+          bool held);
+
+static void
+input_mouse(enum bind_symbol mouse,
+            bool held);
+
+static void
+input_gesture(enum bind_symbol gesture,
+              bool held);
+
+/* ---------- Keyboard ---------- */
+
+static enum bind_symbol
+normalize_keyboard(xkb_keysym_t key)
+{
+    switch (key) {
+
+    case XKB_KEY_Return:  return INPUT_KEY_RETURN;
+    case XKB_KEY_space:   return INPUT_KEY_SPACE;
+    case XKB_KEY_comma:   return INPUT_KEY_COMMA;
+    case XKB_KEY_period:  return INPUT_KEY_PERIOD;
+
+    case XKB_KEY_a:
+    case XKB_KEY_A: return INPUT_KEY_A;
+
+    case XKB_KEY_b:
+    case XKB_KEY_B: return INPUT_KEY_B;
+
+    case XKB_KEY_c:
+    case XKB_KEY_C: return INPUT_KEY_C;
+
+    case XKB_KEY_d:
+    case XKB_KEY_D: return INPUT_KEY_D;
+
+    case XKB_KEY_e:
+    case XKB_KEY_E: return INPUT_KEY_E;
+
+    case XKB_KEY_f:
+    case XKB_KEY_F: return INPUT_KEY_F;
+
+    case XKB_KEY_g:
+    case XKB_KEY_G: return INPUT_KEY_G;
+
+    case XKB_KEY_h:
+    case XKB_KEY_H: return INPUT_KEY_H;
+
+    case XKB_KEY_i:
+    case XKB_KEY_I: return INPUT_KEY_I;
+
+    case XKB_KEY_j:
+    case XKB_KEY_J: return INPUT_KEY_J;
+
+    case XKB_KEY_k:
+    case XKB_KEY_K: return INPUT_KEY_K;
+
+    case XKB_KEY_l:
+    case XKB_KEY_L: return INPUT_KEY_L;
+
+    case XKB_KEY_m:
+    case XKB_KEY_M: return INPUT_KEY_M;
+
+    case XKB_KEY_n:
+    case XKB_KEY_N: return INPUT_KEY_N;
+
+    case XKB_KEY_o:
+    case XKB_KEY_O: return INPUT_KEY_O;
+
+    case XKB_KEY_p:
+    case XKB_KEY_P: return INPUT_KEY_P;
+
+    case XKB_KEY_q:
+    case XKB_KEY_Q: return INPUT_KEY_Q;
+
+    case XKB_KEY_r:
+    case XKB_KEY_R: return INPUT_KEY_R;
+
+    case XKB_KEY_s:
+    case XKB_KEY_S: return INPUT_KEY_S;
+
+    case XKB_KEY_t:
+    case XKB_KEY_T: return INPUT_KEY_T;
+
+    case XKB_KEY_u:
+    case XKB_KEY_U: return INPUT_KEY_U;
+
+    case XKB_KEY_v:
+    case XKB_KEY_V: return INPUT_KEY_V;
+
+    case XKB_KEY_w:
+    case XKB_KEY_W: return INPUT_KEY_W;
+
+    case XKB_KEY_x:
+    case XKB_KEY_X: return INPUT_KEY_X;
+
+    case XKB_KEY_y:
+    case XKB_KEY_Y: return INPUT_KEY_Y;
+
+    case XKB_KEY_z:
+    case XKB_KEY_Z: return INPUT_KEY_Z;
+
+    case XKB_KEY_0: return INPUT_KEY_0;
+    case XKB_KEY_1: return INPUT_KEY_1;
+    case XKB_KEY_2: return INPUT_KEY_2;
+    case XKB_KEY_3: return INPUT_KEY_3;
+    case XKB_KEY_4: return INPUT_KEY_4;
+    case XKB_KEY_5: return INPUT_KEY_5;
+    case XKB_KEY_6: return INPUT_KEY_6;
+    case XKB_KEY_7: return INPUT_KEY_7;
+    case XKB_KEY_8: return INPUT_KEY_8;
+    case XKB_KEY_9: return INPUT_KEY_9;
+
+    default:
+        return SYMBOL_NONE;
+    }
+}
+
+/* ---------- Trackpad ---------- */
+static enum bind_symbol
+normalize_trackpad(enum trackpad_gesture gesture)
+{
+    switch (gesture) {
+
+    case TRACKPAD_PINCH_IN:
+        return GESTURE_PINCH_IN;
+
+    case TRACKPAD_PINCH_OUT:
+        return GESTURE_PINCH_OUT;
+
+    case TRACKPAD_THREE_LEFT:
+        return GESTURE_THREE_LEFT;
+
+    case TRACKPAD_THREE_RIGHT:
+        return GESTURE_THREE_RIGHT;
+
+    case TRACKPAD_THREE_UP:
+        return GESTURE_THREE_UP;
+
+    case TRACKPAD_THREE_DOWN:
+        return GESTURE_THREE_DOWN;
+
+    default:
+        return SYMBOL_NONE;
+    }
+}
+
+static enum bind_symbol
+normalize_scroll(uint32_t axis, int32_t value120) {
+  if (value120 == 0)
+    return SYMBOL_NONE;
+
+  switch (axis) {
+
+    case WL_POINTER_AXIS_VERTICAL_SCROLL:
+      return value120 < 0
+        ? MOUSE_SCROLL_UP
+        : MOUSE_SCROLL_DOWN;
+
+    case WL_POINTER_AXIS_HORIZONTAL_SCROLL:
+      return value120 < 0
+        ? MOUSE_SCROLL_LEFT
+        : MOUSE_SCROLL_RIGHT;
+  }
+    return SYMBOL_NONE;
+}
+
+
 
 void
 axis(void *data, uint32_t time, uint32_t axis, int32_t value120)
 {
-  (void)data;
-
-  /* while moving a window swallow scroll events so they don't reach clients */
-  if (chord.mode == MODE_MOVE) return;
-
-  /* in drag scroll mode, scroll wheel controls zoom when scrolling active */
-  if (scroll_drag_mode) {
-    if (enable_zoom && chord.mode == MODE_SCROLL && axis == 0 &&
-        value120 != 0) {
-      /* vertical scroll wheel controls zoom with easing */
-      if (zoom.target == 0) zoom.target = swc_get_zoom();
-      float delta = (value120 < 0) ? 0.15f : -0.15f;
-      zoom.target += delta;
-      if (zoom.target < 0.25f) zoom.target = 0.25f;
-      if (zoom.target > 4.0f) zoom.target = 4.0f;
-
-      /* Start or continue zoom animation */
-      if (!zoom.timer)
-        zoom.timer =
-            wl_event_loop_add_timer(compositor.evloop, zoom_tick, NULL);
-      if (zoom.timer) wl_event_source_timer_update(zoom.timer, 1);
-      return;
-    }
-    swc_pointer_send_axis(time, axis, value120);
-    return;
-  }
-
-  if (chord.mode != MODE_SCROLL) {
-    swc_pointer_send_axis(time, axis, value120);
-    return;
-  }
-
-  /* only handle vertical scroll */
-  if (axis != 0 || value120 == 0) {
-    swc_pointer_send_axis(time, axis, value120);
-    return;
-  }
-
-  scroll.cursor_dir = value120 < 0 ? -1 : 1;
-  update_mode_cursor();
-
-  /* convert scroll wheel to viewport scroll */
-  int32_t dy = value120 * scrollpx / 120;
-  scroll.pending_px += dy;
-
-  if (!scroll.timer)
-    scroll.timer =
-        wl_event_loop_add_timer(compositor.evloop, scroll_tick, NULL);
-  if (scroll.timer) wl_event_source_timer_update(scroll.timer, 1);
-}
-
-static bool
-handle_kill(uint32_t b, bool pressed, uint32_t time, uint32_t state,
-            bool was_right, bool acme)
-{
-  (void)time; (void)state;
-  if (b != BTN_LEFT) return false;
-
-  if (pressed && was_right && !input.active && !acme) {
-    click_cancel();
-    stop_select();
-    input.active = true;
-    chord.mode = MODE_KILL;
-    update_mode_cursor();
-    return true;
-  }
-
-  if (!pressed && chord.mode == MODE_KILL) {
-    int32_t x, y;
-    if (cursor_position(&x, &y)) {
-      struct swc_window *target = swc_window_at(x, y);
-      if (target) swc_window_close(target);
-    }
-    chord.mode = MODE_NONE;
-    update_mode_cursor();
-    if (!chord.left && !chord.middle && !chord.right) input.active = false;
-    return true;
-  }
-
-  return false;
-}
-
-static bool
-handle_scroll(uint32_t b, bool pressed, bool was_right)
-{
-  if (b != BTN_MIDDLE) return false;
-
-  if (pressed && was_right && !input.active) {
-    click_cancel();
-    stop_select();
-    input.active = true;
-    chord.mode = MODE_SCROLL;
-    scroll.cursor_dir = -1;
-    update_mode_cursor();
-    scroll_stop();
-
-    if (scroll_drag_mode) {
-      int32_t x, y;
-      if (cursor_position(&x, &y)) {
-        input.scroll_drag_last_x = x;
-        input.scroll_drag_last_y = y;
-      }
-      if (!input.scroll_drag_timer)
-        input.scroll_drag_timer =
-            wl_event_loop_add_timer(compositor.evloop, scroll_drag_tick, NULL);
-      if (input.scroll_drag_timer)
-        wl_event_source_timer_update(input.scroll_drag_timer, timerms);
-    }
-    return true;
-  }
-
-  if (!pressed && chord.mode == MODE_SCROLL) return true; /* swallow release */
-
-  return false;
-}
-
-static bool
-handle_move(uint32_t b, bool pressed, uint32_t time, uint32_t state,
-            bool was_left)
-{
-  if (b == BTN_MIDDLE && !pressed && was_left && !input.active &&
-      !sel.selecting) {
-    click_cancel();
-    stop_select();
-    input.active = true;
-    chord.mode = MODE_MOVE;
-    update_mode_cursor();
-
-    if (compositor.focused) {
-      int32_t x, y;
-      struct swc_rectangle geom;
-      if (cursor_position(&x, &y) &&
-          swc_window_get_geometry(compositor.focused, &geom)) {
-        input.move_start_win_x = geom.x;
-        input.move_start_win_y = geom.y;
-        input.move_start_cursor_x = x;
-        input.move_start_cursor_y = y;
-      }
-    }
-
-    if (!input.move_scroll_timer)
-      input.move_scroll_timer =
-          wl_event_loop_add_timer(compositor.evloop, move_scroll_tick, NULL);
-    if (input.move_scroll_timer)
-      wl_event_source_timer_update(input.move_scroll_timer, timerms);
-
-    /* forward the release so clients don't see stuck */
-    swc_pointer_send_button(time, b, state);
-    return true;
-  }
-
-  if (b == BTN_LEFT && !pressed && chord.mode == MODE_MOVE) {
-    chord.mode = MODE_NONE;
-    update_mode_cursor();
-
-    if (input.move_scroll_timer) {
-      wl_event_source_remove(input.move_scroll_timer);
-      input.move_scroll_timer = NULL;
-    }
-
-    if (!chord.left && !chord.middle && !chord.right) input.active = false;
-
-    /* forward the release so clients don't see stuck */
-    swc_pointer_send_button(time, b, state);
-    return true;
-  }
-
-  return false;
-}
-
-static bool
-handle_resize(uint32_t b, bool pressed, uint32_t time, uint32_t state,
-              bool was_right)
-{
-  if (b == BTN_MIDDLE && !pressed && was_right && !input.active &&
-      !sel.selecting) {
-    click_cancel();
-    stop_select();
-    input.active = true;
-    chord.mode = MODE_RESIZE;
-    update_mode_cursor();
-
-    if (compositor.focused) /* bottom right */
-      swc_window_begin_resize(compositor.focused,
-                              SWC_WINDOW_EDGE_RIGHT | SWC_WINDOW_EDGE_BOTTOM);
-
-    /* forward the middle release so clients don't see it stuck */
-    swc_pointer_send_button(time, b, state);
-    return true;
-  }
-
-  if (b == BTN_RIGHT && !pressed && chord.mode == MODE_RESIZE) {
-    chord.mode = MODE_NONE;
-    update_mode_cursor();
-
-    if (compositor.focused) swc_window_end_resize(compositor.focused);
-
-    if (!chord.left && !chord.middle && !chord.right) input.active = false;
-
-    /* let clients see the release we swallowed */
-    swc_pointer_send_button(time, b, state);
-    return true;
-  }
-
-  return false;
-}
-
-static void
-handle_custom(uint32_t b, bool pressed, bool was_left, uint32_t time,
-              uint32_t state)
-{
-  if (b != BTN_MIDDLE || !pressed || !was_left || input.active) return;
-
-  click_cancel();
-  stop_select();
-
-  if (compositor.focused) {
-    struct window *w;
-    wl_list_for_each(w, &compositor.windows, link)
-    {
-      if (w->swc == compositor.focused) {
-
-        if (strcmp(custom_chord, "sticky") == 0)
-          window_toggle_sticky(); 
-        
-		else if (strcmp(custom_chord, "fullscreen") == 0) {
-            window_toggle_fullscreen();             
-    }
-
-        else if (strcmp(custom_chord, "jump") == 0) {
-          bool state = focus_center;
-          focus_center = true;
-          chord.mode = MODE_JUMP;
-          struct window *closest = NULL;
-          struct window *n;
-          struct swc_rectangle ngeom;
-
-          int32_t x = 0, y = 0;
-          cursor_position_raw(&x, &y);
-          int64_t mindist = INT64_MAX;
-          wl_list_for_each(n, &compositor.windows, link)
-          {
-            if (!n->swc) continue;
-            if (!swc_window_get_geometry(n->swc, &ngeom)) continue;
-
-            /* makes a cool switcher thingy */
-            if (n->swc == compositor.focused) continue;
-
-            int64_t dx = (int64_t)x - (int64_t)ngeom.x;
-            int64_t dy = (int64_t)y - (int64_t)ngeom.y;
-
-            /* fuck sqrt() */
-            int64_t dist = dx * dx + dy * dy;
-
-            if (dist < mindist) {
-              closest = n;
-              mindist = dist;
-            }
-          }
-
-          if (closest != NULL) focus_window(closest->swc, "jump");
-
-          chord.mode = MODE_NONE;
-          focus_center = state;
-        }
-        break;
-      }
-    }
-  }
-
-  input.active = true;
-  swc_pointer_send_button(time, b, state);
-}
-
-static void
-handle_select(uint32_t b, bool pressed, bool acme)
-{
-  int32_t x, y;
-  uint32_t outer_w, outer_h;
-  uint32_t bw = outer_border_width + inner_border_width;
-  struct swc_rectangle geometry;
-
-  if (chord.left && chord.right && !input.active && !acme) {
-    click_cancel();
-    input.active = true;
-    if (cursor_position(&x, &y)) {
-      sel.selecting = true;
-      update_mode_cursor();
-      sel.start_x = x;
-      sel.start_y = y;
-      sel.cur_x = x;
-      sel.cur_y = y;
-      swc_overlay_set_box(x, y, x, y, select_box_color, select_box_border);
-      if (!sel.timer)
-        sel.timer =
-            wl_event_loop_add_timer(compositor.evloop, select_tick, NULL);
-      if (sel.timer) wl_event_source_timer_update(sel.timer, timerms);
-    }
-  }
-
-  if (b == BTN_RIGHT && !pressed && sel.selecting) {
-    int32_t x1, y1, x2, y2;
-    if (!cursor_position(&x, &y)) {
-      x = sel.cur_x;
-      y = sel.cur_y;
-    }
-    stop_select();
-
-    x1 = sel.start_x < x ? sel.start_x : x;
-    y1 = sel.start_y < y ? sel.start_y : y;
-    x2 = sel.start_x < x ? x : sel.start_x;
-    y2 = sel.start_y < y ? y : sel.start_y;
-    outer_w = (uint32_t)abs(x2 - x1);
-    outer_h = (uint32_t)abs(y2 - y1);
-    if (outer_w < (50 + 2 * bw)) outer_w = 50 + 2 * bw;
-    if (outer_h < (50 + 2 * bw)) outer_h = 50 + 2 * bw;
-
-    /* swc_window_set_*  content geom */
-    geometry.x = x1 + (int32_t)bw;
-    geometry.y = y1 + (int32_t)bw;
-    geometry.width = outer_w > 2 * bw ? outer_w - 2 * bw : 1;
-    geometry.height = outer_h > 2 * bw ? outer_h - 2 * bw : 1;
-    spawn_term_select(&geometry);
-    printf("spawned terminal at %d,%d %ux%u\n", geometry.x, geometry.y,
-           geometry.width, geometry.height);
-  }
-}
-
-static void
-handle_click(uint32_t b, bool pressed, bool is_lr, bool is_chord_button,
-             uint32_t time, uint32_t state)
-{
-  /* while a chord is active swallow button events so they don't go to
-   * clients, only when no mode owns the event, modes can handle
-   * their own teardown and button forwarding */
-  if (is_chord_button && input.active && !sel.selecting &&
-      chord.mode != MODE_KILL && chord.mode != MODE_MOVE &&
-      chord.mode != MODE_RESIZE) {
-    bool was_scrolling = chord.mode == MODE_SCROLL;
-    if (!chord.right) chord.mode = MODE_NONE;
-    if (was_scrolling && chord.mode != MODE_SCROLL) update_mode_cursor();
-    if (chord.mode != MODE_SCROLL) scroll_stop();
-    if (!chord.left && !chord.middle && !chord.right) input.active = false;
-    return;
-  }
-
-  if (b == BTN_MIDDLE) {
-    if (chord.mode == MODE_MOVE) return;
-    swc_pointer_send_button(time, b, state);
-    return;
-  }
-
-  /* pass normal clicks through to clients */
-  if (is_lr && pressed && !sel.selecting) {
-    bool other_down = (b == BTN_LEFT) ? chord.right : chord.left;
-    if (other_down) {
-      /* chord will activate via the block above */
-    } else if (!chord.pending) {
-      chord.pending = true;
-      chord.forwarded = false;
-      chord.button = b;
-      chord.time = time;
-      if (!chord.timer)
-        chord.timer =
-            wl_event_loop_add_timer(compositor.evloop, click_timeout, NULL);
-      if (chord.timer)
-        wl_event_source_timer_update(chord.timer, chord_click_timeout_ms);
-      return;
-    }
-  }
-
-  if (is_lr && !pressed && !sel.selecting) {
-    if (chord.pending && chord.button == b) {
-      if (!chord.forwarded) {
-        swc_pointer_send_button(chord.time, chord.button,
-                                WL_POINTER_BUTTON_STATE_PRESSED);
-      }
-      swc_pointer_send_button(time, b, WL_POINTER_BUTTON_STATE_RELEASED);
-      click_cancel();
-      return;
-    }
-    swc_pointer_send_button(time, b, WL_POINTER_BUTTON_STATE_RELEASED);
-    return;
-  }
-
-  if (!is_lr) {
-    swc_pointer_send_button(time, b, state);
-    return;
-  }
-}
-
-void
-button(void *data, uint32_t time, uint32_t b, uint32_t state)
-{
-  const char *name;
-  bool pressed;
-  int32_t x, y;
-  bool was_left = chord.left;
-  bool was_right = chord.right;
-  bool is_lr;
-  bool is_chord_button;
-  bool acme = false;
-
+  enum bind_symbol symbol;
+  
   (void)data;
   (void)time;
 
-  pressed = (state == WL_POINTER_BUTTON_STATE_PRESSED);
 
-  switch (b) {
-  case BTN_LEFT:
-    name = "left";
-    chord.left = pressed;
-    break;
-  case BTN_MIDDLE:
-    name = "middle";
-    chord.middle = pressed;
-    break;
-  case BTN_RIGHT:
-    name = "right";
-    chord.right = pressed;
-    break;
-  default:
-    name = "unknown";
-    break;
-  }
+  symbol = normalize_scroll(axis, value120);
 
-  printf("button %s (%d) %s\n", name, b, pressed ? "pressed" : "released");
+if (symbol == SYMBOL_NONE) {
+    swc_pointer_send_axis(time, axis, value120);
+    return;
+}
 
-  is_lr = (b == BTN_LEFT || b == BTN_RIGHT);
-  is_chord_button = (is_lr || b == BTN_MIDDLE);
+if (!binding_dispatch(input.modifiers, symbol, true))
+    swc_pointer_send_axis(time, axis, value120);
+ }
 
-  if (cursor_position(&x, &y)) {
-    struct swc_window *target = swc_window_at(x, y);
-    if (is_acme(target) && target == compositor.focused) acme = true;
-  }
 
-  /* allow 1-3 chord to go to acme specifically */
-  if (acme && is_lr && pressed) {
-    bool other_down = (b == BTN_LEFT) ? was_right : was_left;
-    if (other_down) {
-      swc_pointer_send_button(time, b, state);
-      return;
+void
+button(void *data,
+       uint32_t time,
+       uint32_t button,
+       uint32_t state)
+{
+    (void)data;
+    (void)time;
+
+    bool held = (state == WL_POINTER_BUTTON_STATE_PRESSED);
+
+    switch (button) {
+
+    case BTN_LEFT:
+        input.left_down = held;
+        break;
+
+    case BTN_MIDDLE:
+        input.middle_down = held;
+        break;
+
+    case BTN_RIGHT:
+        input.right_down = held;
+        break;
+
+    default:
+        swc_pointer_send_button(time, button, state);
+        return;
     }
-  }
 
-  bool chord_consumed =
-      handle_kill(b, pressed, time, state, was_right, acme) ||
-      handle_scroll(b, pressed, was_right) ||
-      handle_move(b, pressed, time, state, was_left) ||
-      handle_resize(b, pressed, time, state, was_right);
-  handle_custom(b, pressed, was_left, time, state);
+    input.dragging =
+        input.left_down ||
+        input.middle_down ||
+        input.right_down;
 
-  /* only left button focuses windows */
-  if (pressed && is_lr && !sel.selecting) {
-    bool other_down = (b == BTN_LEFT) ? was_right : was_left;
-    if (b == BTN_LEFT && !other_down && cursor_position(&x, &y)) {
-      struct swc_window *target = swc_window_at(x, y);
-      if (target) focus_window(target, "click");
-    }
-    /* stop auto-scrolling on any clicks */
-    if (scroll.auto_scrolling) {
-      scroll.auto_scrolling = false;
-      scroll_stop();
-    }
-  }
+    enum bind_symbol symbol =
+        normalize_mouse(button,
+                        input.dragging,
+                        input.left_down,
+                        input.middle_down,
+                        input.right_down);
 
-  handle_select(b, pressed, acme);
-  if (!chord_consumed)
-    handle_click(b, pressed, is_lr, is_chord_button, time, state);
+    input_dispatch(symbol, held);
 
-  if (!chord.left && !chord.middle && !chord.right) input.active = false;
+    if (symbol == SYMBOL_NONE)
+        swc_pointer_send_button(time, button, state);
 }
 
 int
@@ -527,10 +307,9 @@ cursor_tick(void *data)
   if (!cursor_position_raw(&x, &y)) {
     wl_event_source_timer_update(input.cursor_timer, timerms);
     return 0;
-  }
+  } 
 
-  wl_list_for_each(ns, &compositor.screens, link)
-  {
+  wl_list_for_each(ns, &compositor.screens, link) {
     struct swc_rectangle *geom = &ns->swc->geometry;
 
     if (x >= geom->x && x < geom->x + (int32_t)geom->width && y >= geom->y &&
@@ -540,7 +319,8 @@ cursor_tick(void *data)
 
       break;
     }
-  }
+
+    }
 
   wl_event_source_timer_update(input.cursor_timer, timerms);
   return 0;
@@ -577,5 +357,4 @@ cursor_position(int32_t *x, int32_t *y)
   return true;
 }
 
-//####################################################################
 

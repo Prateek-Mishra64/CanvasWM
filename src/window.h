@@ -14,10 +14,40 @@ bool
 is_on_screen(struct swc_rectangle *window, struct screen *screen);
 bool
 is_acme(const struct swc_window *swc);
+
+bool 
+window_is_moving(void);
+
+int
+window_move_tick(void *data);
+
+
+void
+window_move_begin(void);
+
+void
+window_end_move(void);
+
+
 void
 newwindow(struct swc_window *swc);
 void
 newscreen(struct swc_screen *swc);
+
+struct window_move_state {
+
+    struct wl_event_source *timer;
+
+    int32_t start_window_x;
+    int32_t start_window_y;
+
+    int32_t start_cursor_x;
+    int32_t start_cursor_y;
+
+    bool active;
+};
+
+extern struct window_move_state move_state;
 
 void
 window_toggle_sticky(void);
@@ -29,4 +59,24 @@ void
 compositor_quit(void);
 
 
+void window_move(void);
+void window_resize(void);
+
+void
+window_close(void);
+
+void window_jump(struct swc_window *target);
+
+void 
+focus_next(void);
+
+void 
+focus_previous(void);
+
+
+struct swc_window *
+window_nearest(int32_t x,
+               int32_t y);
+
 #endif
+

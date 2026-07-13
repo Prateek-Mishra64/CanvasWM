@@ -1,11 +1,11 @@
 #include "window.h"
 #include "hevel.h"
 #include "input.h"
-#include "scroll.h"
 #include "zoom.h"
 #include "spawn.h"
+#include "viewport.h"
 
-
+struct window_move_state move_state;
 
 static struct window *
 focused_window(void)
@@ -41,14 +41,7 @@ focus_window(struct swc_window *swc, const char *reason)
 
   swc_window_focus(swc);
 
-  /* zoom to default size when focusing a window */
-  if (enable_zoom && swc && swc_get_zoom() != 1.0f) {
-    zoom.target = 1.0f;
-    if (!zoom.timer)
-      zoom.timer = wl_event_loop_add_timer(compositor.evloop, zoom_tick, NULL);
-    if (zoom.timer) wl_event_source_timer_update(zoom.timer, 1);
-  }
-
+ 
   if (swc)
     swc_window_set_border(swc, inner_border_color_active, inner_border_width,
                           outer_border_color_active, outer_border_width);
@@ -76,30 +69,17 @@ focus_window(struct swc_window *swc, const char *reason)
           compositor.current_screen->swc->geometry.y +
           (int32_t)compositor.current_screen->swc->geometry.height / 2;
 
-      /* in drag mode: center on both axes; in scroll wheel mode: vertical only
-       */
-      int32_t scroll_delta_x =
-          scroll_drag_mode ? (screen_center_x - window_center_x) : 0;
-      int32_t scroll_delta_y = screen_center_y - window_center_y;
-
-      if (scroll_delta_x != 0 || scroll_delta_y != 0) {
-        /* stop scroll before auto-scroll */
-        scroll_stop();
-
-        scroll.pending_px = scroll_delta_y;
-        scroll.pending_px_x = scroll_delta_x;
-        scroll.rem = 0;
-        scroll.rem_x = 0;
-        scroll.auto_scrolling = true;
-
-        if (!scroll.timer) {
-          scroll.timer =
-              wl_event_loop_add_timer(compositor.evloop, scroll_tick, NULL);
-        }
-        wl_event_source_timer_update(scroll.timer, timerms);
-      }
     }
   }
+
+   /* zoom to default size when focusing a window */
+  if (enable_zoom && swc && swc_get_zoom() != 1.0f) {
+    zoom.target = 1.0f;
+    if (!zoom.timer)
+      zoom.timer = wl_event_loop_add_timer(compositor.evloop, zoom_tick, NULL);
+    if (zoom.timer) wl_event_source_timer_update(zoom.timer, 1);
+  }
+
 }
 
 bool
@@ -198,11 +178,11 @@ newscreen(struct swc_screen *swc)
   swc_screen_set_handler(swc, &screenhandler, s);
   printf("screen %dx%d\n", swc->geometry.width, swc->geometry.height);
 
-  if (!input.cursor_timer)
-    input.cursor_timer =
+  if (!move_state.timer)
+    move_state.timer =
         wl_event_loop_add_timer(compositor.evloop, cursor_tick, NULL);
-  if (input.cursor_timer)
-    wl_event_source_timer_update(input.cursor_timer, timerms);
+  if (move_state.timer)
+    wl_event_source_timer_update(move_state.timer, timerms);
 }
 
 void
@@ -233,3 +213,225 @@ window_toggle_fullscreen(void)
         compositor.focused,
         compositor.current_screen->swc);
 }
+
+static void
+window_schedule_move(void)
+{
+    if (!move_state.timer)
+        move_state.timer =
+            wl_event_loop_add_timer(compositor.evloop,
+                                    window_move_tick,
+                                    NULL);
+
+    wl_event_source_timer_update(move_state.timer,
+                                 timerms);
+}
+
+void
+window_move_begin(void)
+{
+    int32_t x, y;
+    struct swc_rectangle geometry;
+
+    if (!compositor.focused)
+        return;
+
+    if (!cursor_position(&x, &y))
+        return;
+
+    if (!swc_window_get_geometry(compositor.focused, &geometry))
+        return;
+
+    move_state.start_cursor_x = x;
+    move_state.start_cursor_y = y;
+
+    move_state.start_window_x = geometry.x;
+    move_state.start_window_y = geometry.y;
+
+    move_state.active = true;
+    
+    window_schedule_move();
+      
+}
+
+
+void
+window_resize(void)
+{
+
+    if (compositor.focused)
+        swc_window_begin_resize(
+            compositor.focused,
+            SWC_WINDOW_EDGE_RIGHT |
+            SWC_WINDOW_EDGE_BOTTOM);
+}
+
+
+void
+window_close(void)
+{
+    if (!compositor.focused)
+        return;
+
+    swc_window_close(compositor.focused);
+}
+
+
+struct swc_window *
+window_nearest(int32_t x,
+               int32_t y)
+{
+    struct window *closest = NULL;
+    struct window *w;
+    struct swc_rectangle geom;
+
+    int64_t mindist = INT64_MAX;
+
+    wl_list_for_each(w, &compositor.windows, link) {
+
+        if (!w->swc)
+            continue;
+
+        if (!swc_window_get_geometry(w->swc, &geom))
+            continue;
+
+        if (w->swc == compositor.focused)
+            continue;
+
+        int64_t dx = (int64_t)x - geom.x;
+        int64_t dy = (int64_t)y - geom.y;
+        int64_t dist = dx * dx + dy * dy;
+
+        if (dist < mindist) {
+            closest = w;
+            mindist = dist;
+        }
+    }
+
+    return closest ? closest->swc : NULL;
+}
+
+
+void
+window_jump(struct swc_window *target)
+{
+    if (!target)
+        return;
+
+    bool center = focus_center;
+    focus_center = true;
+
+    focus_window(target, "jump");
+
+    focus_center = center;
+}
+
+int
+window_move_tick(void *data)
+{
+    int32_t x, y;
+    struct swc_rectangle geometry;
+
+    int32_t screen_height = 0;
+    int32_t screen_width  = 0;
+    int32_t screen_x      = 0;
+
+    bool edge_hit = false;
+
+    (void)data;
+
+    if (!move_state.active)
+        return 0;
+
+    if (!compositor.focused)
+        return 0;
+
+    /* Current screen geometry */
+    if (compositor.current_screen) {
+        screen_height = compositor.current_screen->swc->geometry.height;
+        screen_width  = compositor.current_screen->swc->geometry.width;
+        screen_x      = compositor.current_screen->swc->geometry.x;
+    }
+
+    if (screen_height == 0) {
+        window_schedule_move();
+        return 0;
+    }
+
+    if (!cursor_position(&x, &y)) {
+       window_schedule_move();
+       return 0;
+    }
+
+    /* Smooth window movement */
+    if (swc_window_get_geometry(compositor.focused, &geometry)) {
+
+        int32_t target_x =
+            move_state.start_window_x +
+            (x - move_state.start_cursor_x);
+
+        int32_t target_y =
+            move_state.start_window_y +
+            (y - move_state.start_cursor_y);
+
+        int32_t new_x =
+            geometry.x +
+            (int32_t)((target_x - geometry.x) * move_ease_factor);
+
+        int32_t new_y =
+            geometry.y +
+            (int32_t)((target_y - geometry.y) * move_ease_factor);
+
+        swc_window_set_position(compositor.focused,
+                                new_x,
+                                new_y);
+    }
+
+    /* Vertical viewport follow */
+
+    if (y < move_scroll_edge_threshold) {
+        edge_hit = true;
+        viewport_push(0, move_scroll_speed);
+    }
+    else if (y > screen_height - move_scroll_edge_threshold) {
+        edge_hit = true;
+        viewport_push(0, -move_scroll_speed);
+    }
+
+    /* Horizontal viewport follow */
+
+    if (compositor.current_screen) {
+
+        if (x < screen_x + move_scroll_edge_threshold) {
+            edge_hit = true;
+            viewport_push(move_scroll_speed, 0);
+        }
+        else if (x >
+                 screen_x + screen_width -
+                 move_scroll_edge_threshold) {
+            edge_hit = true;
+            viewport_push(-move_scroll_speed, 0);
+        }
+    }
+
+    viewport_set_active(edge_hit);
+
+    window_schedule_move();
+
+    return 0;
+}
+
+bool
+window_is_moving(void)
+{
+    return move_state.active;
+}
+
+
+void
+window_end_move(void)
+{
+    move_state.active = false;
+}
+
+

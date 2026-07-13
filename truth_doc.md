@@ -1,4 +1,5 @@
 
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:$PKG_CONFIG_PATH
 
 Refactor 2 – Paint Brush
 Objective

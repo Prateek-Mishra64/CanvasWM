@@ -2,6 +2,7 @@
 #include "hevel.h"
 #include "input.h"
 #include "spawn.h"
+#include "window.h"
 #include "../config.h"
 
 int
@@ -23,40 +24,3 @@ select_tick(void *data)
   return 0;
 }
 
-void
-stop_select(void)
-{
-  if (sel.timer) {
-    wl_event_source_remove(sel.timer);
-    sel.timer = NULL;
-  }
-  sel.selecting = false;
-  swc_overlay_clear();
-  update_mode_cursor();
-}
-
-void
-spawn_term_select(const struct swc_rectangle *geometry)
-{
-  (void)geometry;
-
-  spawn_launch(term, 1000, 800);
-}
-
-void
-update_mode_cursor(void)
-{
-  if (chord.mode == MODE_KILL)
-    swc_set_cursor(SWC_CURSOR_SIGHT);
-  else if (chord.mode == MODE_SCROLL) {
-    if (scroll.cursor_dir < 0)
-      swc_set_cursor(SWC_CURSOR_UP);
-    else
-      swc_set_cursor(SWC_CURSOR_DOWN);
-  } else if (sel.selecting)
-    swc_set_cursor(SWC_CURSOR_CROSS);
-  else if (chord.mode == MODE_MOVE || chord.mode == MODE_RESIZE)
-    swc_set_cursor(SWC_CURSOR_BOX);
-  else
-    swc_set_cursor(SWC_CURSOR_DEFAULT);
-}

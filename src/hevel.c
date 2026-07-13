@@ -2,9 +2,7 @@
 #include "binding.h"
 
 struct compositor_state compositor = {0};
-struct input_state input = {0};
 struct chord_state chord = {0};
-struct scroll_state scroll = {0};
 struct zoom_state zoom = {0};
 struct sel_state sel = {0};
 
@@ -47,7 +45,6 @@ maybe_enable_nein_cursor_theme(void)
                        down->width, down->height, down->hotspot_x,
                        down->hotspot_y);
 
-  update_mode_cursor();
 }
 
 static void
@@ -62,15 +59,6 @@ static const struct swc_manager manager = {
     .new_device = newdevice,
 };
 
-static void
-quit(void *data, uint32_t time, uint32_t value, uint32_t state)
-{
-  (void)data;
-  (void)time;
-  (void)value;
-  (void)state;
-  wl_display_terminate(compositor.display);
-}
 
 static void
 sig(int s)
@@ -104,10 +92,7 @@ main(void)
   }
 
   maybe_enable_nein_cursor_theme();
-  binding_initialize();
 
-  swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO | SWC_MOD_SHIFT, XKB_KEY_q,
-                  quit, NULL);
 
   /* we can bind mouse buttons using SWC_MOD_ANY */
   swc_add_binding(SWC_BINDING_BUTTON, SWC_MOD_ANY, BTN_LEFT, button, NULL);

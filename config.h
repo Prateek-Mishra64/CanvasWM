@@ -5,25 +5,29 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "src/binding.h"
-#include <xkbcommon/xkbcommon-keysyms.h>
+#include "src/input.h"
+#include "src/action.h"
 #define LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
-#define ACTION_BIND(modifier, keysym, act) \
-{                                          \
-    .modifiers = (modifier),               \
-    .key = (keysym),                       \
-    .type = BIND_ACTION,                   \
-    .action = (act),                       \
-}
-
-#define EXEC_BIND(modifier, keysym, cmd) \
+#define ACTION_BIND(modifier, bind, act) \
 {                                        \
     .modifiers = (modifier),             \
-    .key = (keysym),                     \
-    .type = BIND_EXEC,                   \
-    .command = (cmd),                    \
+    .symbol = (bind),                    \
+    .type = BIND_ACTION,                 \
+    .action = (act),                     \
 }
 
+#define EXEC_BIND(modifier, bind, cmd) \
+{                                      \
+    .modifiers = (modifier),           \
+    .symbol = (bind),                  \
+    .type = BIND_EXEC,                 \
+    .command = (cmd),                  \
+}
+
+static const float zoom_step = 0.15f;
+static const float zoom_min  = 0.25f;
+static const float zoom_max  = 4.0f;
 
 static const uint32_t background_color = 0xff242933;
 
@@ -39,22 +43,45 @@ static const uint32_t inner_border_width = 1;
 static const uint32_t select_box_color = 0xffffffff;
 static const uint32_t select_box_border = 2;
 /*############################# EDIT CANVAS SYSTEM BINDS HERE #############################################*/
-static const struct binding bindings[] = {
+/*static const struct binding bindings[] = {
 
-    ACTION_BIND(MOD_SUPER, XKB_KEY_period, ACTION_WINDOW_FULLSCREEN_TOGGLE),
+    ACTION_BIND(MOD_SUPER, INPUT_KEY_X, ACTION_WINDOW_FULLSCREEN_TOGGLE),
+    ACTION_BIND(MOD_SUPER, INPUT_KEY_COMMA, ACTION_WINDOW_STICKY_TOGGLE),
 
-    ACTION_BIND(MOD_SUPER, XKB_KEY_comma, ACTION_WINDOW_STICKY_TOGGLE),
+    /* Viewport navigation */
+    ACTION_BIND(MOD_SUPER, INPUT_KEY_J, ACTION_VIEWPORT_LEFT),
+    ACTION_BIND(MOD_SUPER, INPUT_KEY_K, ACTION_VIEWPORT_RIGHT),
+    ACTION_BIND(MOD_SUPER, INPUT_KEY_I, ACTION_VIEWPORT_UP),
+    ACTION_BIND(MOD_SUPER, INPUT_KEY_M, ACTION_VIEWPORT_DOWN),
+
+    /* Window jump */
+    ACTION_BIND(MOD_SUPER, INPUT_KEY_O, ACTION_WINDOW_JUMP),
+
+    /* Zoom */
+    ACTION_BIND(MOD_SUPER, MOUSE_SCROLL_UP, ACTION_ZOOM_IN),
+    ACTION_BIND(MOD_SUPER, MOUSE_SCROLL_DOWN, ACTION_ZOOM_OUT),
+
+    /* Mouse */
+    ACTION_BIND(MOD_SUPER, MOUSE_LEFT_DRAG, ACTION_VIEWPORT_MOVE),
+    ACTION_BIND(MOD_SUPER | MOD_SHIFT,
+                MOUSE_LEFT_DRAG,
+                ACTION_WINDOW_MOVE),
+
+    ACTION_BIND(MOD_SUPER, MOUSE_RIGHT_DRAG, ACTION_WINDOW_RESIZE),
 
     ACTION_BIND(MOD_SUPER | MOD_SHIFT,
-         XKB_KEY_Q,
-         ACTION_QUIT),
-    EXEC_BIND(MOD_SUPER, XKB_KEY_t, "kitty"),
-    EXEC_BIND(MOD_SUPER, XKB_KEY_f, "librewolf"),
-    EXEC_BIND(MOD_SUPER, XKB_KEY_g, "nautilus --new-window"),
-    EXEC_BIND(MOD_SUPER, XKB_KEY_space, "rofi -show drun"),
+                INPUT_KEY_Q,
+                ACTION_QUIT),
 
-};
-/* cursor themes:
+    EXEC_BIND(MOD_SUPER, INPUT_KEY_T, "kitty"),
+    EXEC_BIND(MOD_SUPER, INPUT_KEY_F, "librewolf"),
+    EXEC_BIND(MOD_SUPER, INPUT_KEY_G, "nautilus --new-window"),
+    EXEC_BIND(MOD_SUPER, INPUT_KEY_SPACE, "rofi -show drun"),
+
+}; 
+
+cursor themes:
+/*
  * - "swc"  : use swc's built-in cursor, client cursors allowed, no per-chord
  * cursor
  * - "nein" : use the plan 9 cursor set, client cursors blocked, per chord
