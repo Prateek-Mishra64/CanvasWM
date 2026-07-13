@@ -20,7 +20,7 @@ bool
 viewport_active(void);
 
 void
-viewport_begin_navigation();
+viewport_begin_navigation(void);
 void 
 viewport_left(void);
 void 

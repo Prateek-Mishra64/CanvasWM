@@ -43,7 +43,7 @@ static const uint32_t inner_border_width = 1;
 static const uint32_t select_box_color = 0xffffffff;
 static const uint32_t select_box_border = 2;
 /*############################# EDIT CANVAS SYSTEM BINDS HERE #############################################*/
-/*static const struct binding bindings[] = {
+static const struct binding bindings[] = {
 
     ACTION_BIND(MOD_SUPER, INPUT_KEY_X, ACTION_WINDOW_FULLSCREEN_TOGGLE),
     ACTION_BIND(MOD_SUPER, INPUT_KEY_COMMA, ACTION_WINDOW_STICKY_TOGGLE),
@@ -62,7 +62,7 @@ static const uint32_t select_box_border = 2;
     ACTION_BIND(MOD_SUPER, MOUSE_SCROLL_DOWN, ACTION_ZOOM_OUT),
 
     /* Mouse */
-    ACTION_BIND(MOD_SUPER, MOUSE_LEFT_DRAG, ACTION_VIEWPORT_MOVE),
+    ACTION_BIND(MOD_SUPER, MOUSE_LEFT_DRAG, ACTION_VIEWPORT_NAVIGATE),
     ACTION_BIND(MOD_SUPER | MOD_SHIFT,
                 MOUSE_LEFT_DRAG,
                 ACTION_WINDOW_MOVE),
@@ -80,7 +80,6 @@ static const uint32_t select_box_border = 2;
 
 }; 
 
-cursor themes:
 /*
  * - "swc"  : use swc's built-in cursor, client cursors allowed, no per-chord
  * cursor
