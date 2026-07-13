@@ -53,6 +53,19 @@ newdevice(struct libinput_device *dev)
   (void)dev;
 }
 
+
+static bool
+canvas_raw_key(xkb_keysym_t sym,
+               uint32_t modifiers,
+               bool held)
+{
+    input.modifiers = modifiers;
+
+    input_keyboard(sym, held);
+
+    return true;
+}
+
 static const struct swc_manager manager = {
     .new_screen = newscreen,
     .new_window = newwindow,
@@ -66,6 +79,7 @@ sig(int s)
   (void)s;
   wl_display_terminate(compositor.display);
 }
+
 
 int
 main(void)
@@ -92,17 +106,16 @@ main(void)
   }
 
   maybe_enable_nein_cursor_theme();
+  swc_set_raw_key_handler(canvas_raw_key);
 
 
   /* we can bind mouse buttons using SWC_MOD_ANY */
   swc_add_binding(SWC_BINDING_BUTTON, SWC_MOD_ANY, BTN_LEFT, button, NULL);
   swc_add_binding(SWC_BINDING_BUTTON, SWC_MOD_ANY, BTN_MIDDLE, button, NULL);
   swc_add_binding(SWC_BINDING_BUTTON, SWC_MOD_ANY, BTN_RIGHT, button, NULL);
-  if (swc_add_axis_binding(SWC_MOD_ANY, 0, axis, NULL) < 0)
-    fprintf(stderr, "cannot bind vertical scroll axis\n");
-  if (swc_add_axis_binding(SWC_MOD_ANY, 1, axis, NULL) < 0)
-    fprintf(stderr, "cannot bind horizontal scroll axis\n");
-
+  
+  swc_add_axis_binding(SWC_MOD_ANY, 0, axis, NULL);
+  swc_add_axis_binding(SWC_MOD_ANY, 1, axis, NULL);
   sock = wl_display_add_socket_auto(compositor.display);
   if (!sock) {
     fprintf(stderr, "cannot add socket\n");

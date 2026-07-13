@@ -76,15 +76,15 @@ action_execute(enum action action,
         break;
       }
 
-    case ACTION_FOCUS_NEXT:
-        if (!held)
-            focus_next();
-        break;
+//    case ACTION_FOCUS_NEXT:
+  //      if (!held)
+    //        focus_next();
+      //  break;
 
-    case ACTION_FOCUS_PREVIOUS:
-        if (!held)
-            focus_previous();
-        break;
+//    case ACTION_FOCUS_PREVIOUS:
+  //      if (!held)
+    //        focus_previous();
+      //  break;
 
     case ACTION_ZOOM_IN:
         if (!held)

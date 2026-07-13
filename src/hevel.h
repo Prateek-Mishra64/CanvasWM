@@ -11,6 +11,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <wayland-server.h>
+#include "input.h"
 
 #ifdef __linux__
 #include <linux/input-event-codes.h>

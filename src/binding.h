@@ -19,14 +19,6 @@ enum binding_type {
     BIND_EXEC,
 };
 
-enum input_event {
-    INPUT_PRESS,
-    INPUT_RELEASE,
-    INPUT_BEGIN,
-    INPUT_UPDATE,
-    INPUT_END,
-};
-
 enum trackpad_gesture {
     TRACKPAD_NONE,
     TRACKPAD_PINCH_IN,

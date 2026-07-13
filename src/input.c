@@ -7,44 +7,19 @@
 #include <xkbcommon/xkbcommon.h>
 
 
-static enum bind_symbol
-normalize_mouse(uint32_t button,
-                bool dragging,
-                bool left_down,
-                bool middle_down,
-                bool right_down)
-{
-    if (dragging) {
-
-        if (left_down && right_down)
-            return MOUSE_LR_CHORD;
-
-        if (left_down)
-            return MOUSE_LEFT_DRAG;
-
-        if (right_down)
-            return MOUSE_RIGHT_DRAG;
-
-        if (middle_down)
-            return MOUSE_MIDDLE_DRAG;
-
-        return SYMBOL_NONE;
-    }
-
-    if (left_down)
-        return MOUSE_LEFT_CLICK;
-
-    if (middle_down)
-        return MOUSE_MIDDLE_CLICK;
-
-    if (right_down)
-        return MOUSE_RIGHT_CLICK;
-
-    return SYMBOL_NONE;
-}
 
 
 struct input_state input;
+
+static void normalize_keyboard(xkb_keysym_t key, bool held);
+static void normalize_trackpad(enum trackpad_gesture gesture, bool held);
+static void normalize_mouse(bool dragging,
+                            bool left,
+                            bool middle,
+                            bool right,
+                            bool held);
+static void normalize_scroll(uint32_t axis,
+                             int32_t value120);
 
 /* Forward normalized input into the binding layer */
 void
@@ -57,195 +32,346 @@ input_dispatch(enum bind_symbol symbol,
     binding_dispatch(input.modifiers, symbol, held);
 }
 
+void
+input_keyboard(xkb_keysym_t key,
+               bool held)
+{
+    normalize_keyboard(key, held);
+}
+
+void
+input_trackpad(enum trackpad_gesture gesture,
+               bool held)
+{
+    normalize_trackpad(gesture, held);
+}
+
+void
+input_modifiers(enum modifier modifiers)
+{
+    input.modifiers = modifiers;
+}
+
+
 
 static void
-input_key(enum bind_symbol key,
-          bool held);
+normalize_mouse(bool dragging,
+                bool left_down,
+                bool middle_down,
+                bool right_down,
+                bool held)
+{
+    if (dragging) {
 
-static void
-input_mouse(enum bind_symbol mouse,
-            bool held);
+        if (left_down && right_down) {
+            input_dispatch(MOUSE_LR_CHORD, held);
+            return;
+        }
 
-static void
-input_gesture(enum bind_symbol gesture,
-              bool held);
+        if (left_down) {
+            input_dispatch(MOUSE_LEFT_DRAG, held);
+            return;
+        }
 
+        if (right_down) {
+            input_dispatch(MOUSE_RIGHT_DRAG, held);
+            return;
+        }
+
+        if (middle_down) {
+            input_dispatch(MOUSE_MIDDLE_DRAG, held);
+            return;
+        }
+
+        return;
+    }
+
+    if (left_down) {
+        input_dispatch(MOUSE_LEFT_CLICK, held);
+        return;
+    }
+
+    if (middle_down) {
+        input_dispatch(MOUSE_MIDDLE_CLICK, held);
+        return;
+    }
+
+    if (right_down) {
+        input_dispatch(MOUSE_RIGHT_CLICK, held);
+        return;
+    }
+}
 /* ---------- Keyboard ---------- */
 
-static enum bind_symbol
-normalize_keyboard(xkb_keysym_t key)
+static void
+normalize_keyboard(xkb_keysym_t key,
+                   bool held)
 {
     switch (key) {
 
-    case XKB_KEY_Return:  return INPUT_KEY_RETURN;
-    case XKB_KEY_space:   return INPUT_KEY_SPACE;
-    case XKB_KEY_comma:   return INPUT_KEY_COMMA;
-    case XKB_KEY_period:  return INPUT_KEY_PERIOD;
+    case XKB_KEY_Return:
+        input_dispatch(INPUT_KEY_RETURN, held);
+        return;
+
+    case XKB_KEY_space:
+        input_dispatch(INPUT_KEY_SPACE, held);
+        return;
+
+    case XKB_KEY_comma:
+        input_dispatch(INPUT_KEY_COMMA, held);
+        return;
+
+    case XKB_KEY_period:
+        input_dispatch(INPUT_KEY_PERIOD, held);
+        return;
 
     case XKB_KEY_a:
-    case XKB_KEY_A: return INPUT_KEY_A;
+    case XKB_KEY_A:
+        input_dispatch(INPUT_KEY_A, held);
+        return;
 
     case XKB_KEY_b:
-    case XKB_KEY_B: return INPUT_KEY_B;
+    case XKB_KEY_B:
+        input_dispatch(INPUT_KEY_B, held);
+        return;
 
     case XKB_KEY_c:
-    case XKB_KEY_C: return INPUT_KEY_C;
+    case XKB_KEY_C:
+        input_dispatch(INPUT_KEY_C, held);
+        return;
 
     case XKB_KEY_d:
-    case XKB_KEY_D: return INPUT_KEY_D;
+    case XKB_KEY_D:
+        input_dispatch(INPUT_KEY_D, held);
+        return;
 
     case XKB_KEY_e:
-    case XKB_KEY_E: return INPUT_KEY_E;
+    case XKB_KEY_E:
+        input_dispatch(INPUT_KEY_E, held);
+        return;
 
     case XKB_KEY_f:
-    case XKB_KEY_F: return INPUT_KEY_F;
+    case XKB_KEY_F:
+        input_dispatch(INPUT_KEY_F, held);
+        return;
 
     case XKB_KEY_g:
-    case XKB_KEY_G: return INPUT_KEY_G;
+    case XKB_KEY_G:
+        input_dispatch(INPUT_KEY_G, held);
+        return;
 
     case XKB_KEY_h:
-    case XKB_KEY_H: return INPUT_KEY_H;
+    case XKB_KEY_H:
+        input_dispatch(INPUT_KEY_H, held);
+        return;
 
     case XKB_KEY_i:
-    case XKB_KEY_I: return INPUT_KEY_I;
+    case XKB_KEY_I:
+        input_dispatch(INPUT_KEY_I, held);
+        return;
 
     case XKB_KEY_j:
-    case XKB_KEY_J: return INPUT_KEY_J;
+    case XKB_KEY_J:
+        input_dispatch(INPUT_KEY_J, held);
+        return;
 
     case XKB_KEY_k:
-    case XKB_KEY_K: return INPUT_KEY_K;
+    case XKB_KEY_K:
+        input_dispatch(INPUT_KEY_K, held);
+        return;
 
     case XKB_KEY_l:
-    case XKB_KEY_L: return INPUT_KEY_L;
+    case XKB_KEY_L:
+        input_dispatch(INPUT_KEY_L, held);
+        return;
 
     case XKB_KEY_m:
-    case XKB_KEY_M: return INPUT_KEY_M;
+    case XKB_KEY_M:
+        input_dispatch(INPUT_KEY_M, held);
+        return;
 
     case XKB_KEY_n:
-    case XKB_KEY_N: return INPUT_KEY_N;
+    case XKB_KEY_N:
+        input_dispatch(INPUT_KEY_N, held);
+        return;
 
     case XKB_KEY_o:
-    case XKB_KEY_O: return INPUT_KEY_O;
+    case XKB_KEY_O:
+        input_dispatch(INPUT_KEY_O, held);
+        return;
 
     case XKB_KEY_p:
-    case XKB_KEY_P: return INPUT_KEY_P;
+    case XKB_KEY_P:
+        input_dispatch(INPUT_KEY_P, held);
+        return;
 
     case XKB_KEY_q:
-    case XKB_KEY_Q: return INPUT_KEY_Q;
+    case XKB_KEY_Q:
+        input_dispatch(INPUT_KEY_Q, held);
+        return;
 
     case XKB_KEY_r:
-    case XKB_KEY_R: return INPUT_KEY_R;
+    case XKB_KEY_R:
+        input_dispatch(INPUT_KEY_R, held);
+        return;
 
     case XKB_KEY_s:
-    case XKB_KEY_S: return INPUT_KEY_S;
+    case XKB_KEY_S:
+        input_dispatch(INPUT_KEY_S, held);
+        return;
 
     case XKB_KEY_t:
-    case XKB_KEY_T: return INPUT_KEY_T;
+    case XKB_KEY_T:
+        input_dispatch(INPUT_KEY_T, held);
+        return;
 
     case XKB_KEY_u:
-    case XKB_KEY_U: return INPUT_KEY_U;
+    case XKB_KEY_U:
+        input_dispatch(INPUT_KEY_U, held);
+        return;
 
     case XKB_KEY_v:
-    case XKB_KEY_V: return INPUT_KEY_V;
+    case XKB_KEY_V:
+        input_dispatch(INPUT_KEY_V, held);
+        return;
 
     case XKB_KEY_w:
-    case XKB_KEY_W: return INPUT_KEY_W;
+    case XKB_KEY_W:
+        input_dispatch(INPUT_KEY_W, held);
+        return;
 
     case XKB_KEY_x:
-    case XKB_KEY_X: return INPUT_KEY_X;
+    case XKB_KEY_X:
+        input_dispatch(INPUT_KEY_X, held);
+        return;
 
     case XKB_KEY_y:
-    case XKB_KEY_Y: return INPUT_KEY_Y;
+    case XKB_KEY_Y:
+        input_dispatch(INPUT_KEY_Y, held);
+        return;
 
     case XKB_KEY_z:
-    case XKB_KEY_Z: return INPUT_KEY_Z;
+    case XKB_KEY_Z:
+        input_dispatch(INPUT_KEY_Z, held);
+        return;
 
-    case XKB_KEY_0: return INPUT_KEY_0;
-    case XKB_KEY_1: return INPUT_KEY_1;
-    case XKB_KEY_2: return INPUT_KEY_2;
-    case XKB_KEY_3: return INPUT_KEY_3;
-    case XKB_KEY_4: return INPUT_KEY_4;
-    case XKB_KEY_5: return INPUT_KEY_5;
-    case XKB_KEY_6: return INPUT_KEY_6;
-    case XKB_KEY_7: return INPUT_KEY_7;
-    case XKB_KEY_8: return INPUT_KEY_8;
-    case XKB_KEY_9: return INPUT_KEY_9;
+    case XKB_KEY_0:
+        input_dispatch(INPUT_KEY_0, held);
+        return;
+
+    case XKB_KEY_1:
+        input_dispatch(INPUT_KEY_1, held);
+        return;
+
+    case XKB_KEY_2:
+        input_dispatch(INPUT_KEY_2, held);
+        return;
+
+    case XKB_KEY_3:
+        input_dispatch(INPUT_KEY_3, held);
+        return;
+
+    case XKB_KEY_4:
+        input_dispatch(INPUT_KEY_4, held);
+        return;
+
+    case XKB_KEY_5:
+        input_dispatch(INPUT_KEY_5, held);
+        return;
+
+    case XKB_KEY_6:
+        input_dispatch(INPUT_KEY_6, held);
+        return;
+
+    case XKB_KEY_7:
+        input_dispatch(INPUT_KEY_7, held);
+        return;
+
+    case XKB_KEY_8:
+        input_dispatch(INPUT_KEY_8, held);
+        return;
+
+    case XKB_KEY_9:
+        input_dispatch(INPUT_KEY_9, held);
+        return;
 
     default:
-        return SYMBOL_NONE;
+        return;
     }
 }
 
 /* ---------- Trackpad ---------- */
-static enum bind_symbol
-normalize_trackpad(enum trackpad_gesture gesture)
+static void
+normalize_trackpad(enum trackpad_gesture gesture,
+                   bool held)
 {
     switch (gesture) {
 
     case TRACKPAD_PINCH_IN:
-        return GESTURE_PINCH_IN;
+        input_dispatch(GESTURE_PINCH_IN, held);
+        return;
 
     case TRACKPAD_PINCH_OUT:
-        return GESTURE_PINCH_OUT;
+        input_dispatch(GESTURE_PINCH_OUT, held);
+        return;
 
     case TRACKPAD_THREE_LEFT:
-        return GESTURE_THREE_LEFT;
+        input_dispatch(GESTURE_THREE_LEFT, held);
+        return;
 
     case TRACKPAD_THREE_RIGHT:
-        return GESTURE_THREE_RIGHT;
+        input_dispatch(GESTURE_THREE_RIGHT, held);
+        return;
 
     case TRACKPAD_THREE_UP:
-        return GESTURE_THREE_UP;
+        input_dispatch(GESTURE_THREE_UP, held);
+        return;
 
     case TRACKPAD_THREE_DOWN:
-        return GESTURE_THREE_DOWN;
+        input_dispatch(GESTURE_THREE_DOWN, held);
+        return;
 
+    case TRACKPAD_NONE:
     default:
-        return SYMBOL_NONE;
+        return;
     }
 }
 
-static enum bind_symbol
-normalize_scroll(uint32_t axis, int32_t value120) {
-  if (value120 == 0)
-    return SYMBOL_NONE;
+static void
+normalize_scroll(uint32_t axis,
+                 int32_t value120)
+{
+    if (value120 == 0)
+        return;
 
-  switch (axis) {
+    switch (axis) {
 
     case WL_POINTER_AXIS_VERTICAL_SCROLL:
-      return value120 < 0
-        ? MOUSE_SCROLL_UP
-        : MOUSE_SCROLL_DOWN;
+        input_dispatch(
+            value120 < 0 ? MOUSE_SCROLL_UP
+                         : MOUSE_SCROLL_DOWN,
+            true);
+        return;
 
     case WL_POINTER_AXIS_HORIZONTAL_SCROLL:
-      return value120 < 0
-        ? MOUSE_SCROLL_LEFT
-        : MOUSE_SCROLL_RIGHT;
-  }
-    return SYMBOL_NONE;
+        input_dispatch(
+            value120 < 0 ? MOUSE_SCROLL_LEFT
+                         : MOUSE_SCROLL_RIGHT,
+            true);
+        return;
+    }
 }
-
-
 
 void
 axis(void *data, uint32_t time, uint32_t axis, int32_t value120)
 {
-  enum bind_symbol symbol;
   
   (void)data;
   (void)time;
 
 
-  symbol = normalize_scroll(axis, value120);
-
-if (symbol == SYMBOL_NONE) {
-    swc_pointer_send_axis(time, axis, value120);
-    return;
+ normalize_scroll(axis, value120);
 }
-
-if (!binding_dispatch(input.modifiers, symbol, true))
-    swc_pointer_send_axis(time, axis, value120);
- }
 
 
 void
@@ -283,17 +409,11 @@ button(void *data,
         input.middle_down ||
         input.right_down;
 
-    enum bind_symbol symbol =
-        normalize_mouse(button,
-                        input.dragging,
-                        input.left_down,
-                        input.middle_down,
-                        input.right_down);
-
-    input_dispatch(symbol, held);
-
-    if (symbol == SYMBOL_NONE)
-        swc_pointer_send_button(time, button, state);
+   normalize_mouse(input.dragging,
+                input.left_down,
+                input.middle_down,
+                input.right_down,
+                held);
 }
 
 int

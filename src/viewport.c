@@ -194,3 +194,27 @@ viewport_drag_tick(void *data)
 
     return 0;
 }
+
+void
+viewport_begin_navigation(void)
+{
+    int32_t x, y;
+
+    if (!cursor_position(&x, &y))
+        return;
+
+    viewport.drag_last_x = x;
+    viewport.drag_last_y = y;
+
+    viewport.active = true;
+
+    if (!viewport.drag_timer)
+        viewport.drag_timer =
+            wl_event_loop_add_timer(compositor.evloop,
+                                    viewport_drag_tick,
+                                    NULL);
+
+    wl_event_source_timer_update(viewport.drag_timer,
+                                 timerms);
+}
+

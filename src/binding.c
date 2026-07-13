@@ -38,6 +38,9 @@ binding_dispatch(enum modifier modifiers,
             break;
         }
 
-        return false;
+        return true;
     }
+    return false;
+
 }
+
