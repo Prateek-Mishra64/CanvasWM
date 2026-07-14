@@ -54,7 +54,7 @@ static const struct binding bindings[] = {
     ACTION_BIND(MOD_SUPER, INPUT_KEY_I, ACTION_VIEWPORT_UP),
     ACTION_BIND(MOD_SUPER, INPUT_KEY_M, ACTION_VIEWPORT_DOWN),
 
-    /* Window jump */
+      /* Window jump */
     ACTION_BIND(MOD_SUPER, INPUT_KEY_O, ACTION_WINDOW_JUMP),
 
     /* Zoom */

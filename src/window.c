@@ -176,6 +176,7 @@ newscreen(struct swc_screen *swc)
   s->swc = swc;
   wl_list_insert(&compositor.screens, &s->link);
   swc_screen_set_handler(swc, &screenhandler, s);
+  spawn_launch("kitty", 1000, 800);
   printf("screen %dx%d\n", swc->geometry.width, swc->geometry.height);
 
 }

@@ -1,5 +1,6 @@
 #include "input.h"
 #include "hevel.h"
+#include "binding.h"
 
 
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -34,6 +35,7 @@ input_dispatch(enum input_symbol symbol,
         return;
     input.symbol = symbol;
     input.held = held;
+    binding_resolve();
 
 }
 
@@ -41,6 +43,8 @@ void
 input_keyboard(xkb_keysym_t key,
                bool held)
 {
+    fprintf(stderr, "key: %u held=%d\n", key, held);
+    fflush(stderr);
     normalize_keyboard(key, held);
 }
 
@@ -424,31 +428,35 @@ button(void *data,
 static int
 cursor_tick(void *data)
 {
-  (void)data;
+    (void)data;
 
-  int32_t x, y;
-  struct screen *ns = NULL;
+    int32_t x, y;
+    struct screen *ns = NULL;
 
-  if (!cursor_position_raw(&x, &y)) {
+    if (!cursor_position_raw(&x, &y)) {
+        wl_event_source_timer_update(cursor_timer, timerms);
+        return 0;
+    }
+
+    /* Input owns the cursor state */
+    input.cursor.x = x;
+    input.cursor.y = y;
+
+    wl_list_for_each(ns, &compositor.screens, link) {
+        struct swc_rectangle *geom = &ns->swc->geometry;
+
+        if (x >= geom->x &&
+            x < geom->x + (int32_t)geom->width &&
+            y >= geom->y &&
+            y < geom->y + (int32_t)geom->height) {
+
+            compositor.current_screen = ns;
+            break;
+        }
+    }
+
     wl_event_source_timer_update(cursor_timer, timerms);
     return 0;
-  } 
-
-  wl_list_for_each(ns, &compositor.screens, link) {
-    struct swc_rectangle *geom = &ns->swc->geometry;
-
-    if (x >= geom->x && x < geom->x + (int32_t)geom->width && y >= geom->y &&
-        y < geom->y + (int32_t)geom->height) {
-
-      if (compositor.current_screen != ns) compositor.current_screen = ns;
-
-      break;
-    }
-
-    }
-
-  wl_event_source_timer_update(cursor_timer, timerms);
-  return 0;
 }
 
 static bool
