@@ -4,6 +4,7 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 
 struct compositor_state compositor = {0};
@@ -130,6 +131,14 @@ main(void)
 
   evloop = wl_display_get_event_loop(compositor.display);
   compositor.evloop = evloop;
+
+  fprintf(stderr, "HEVEL PID = %d\n", getpid());
+  fflush(stderr);
+
+  fprintf(stderr, "Attach gdb now and press Enter...\n");
+  fflush(stderr);
+
+  getchar();
 
   if (!swc_initialize(compositor.display, evloop, &manager)) {
     fprintf(stderr, "cannot initialize swc\n");
