@@ -283,6 +283,37 @@ Future launcher and IPC integration
 
 
 
+Dump of assembler code for function cursor_tick:
+   0x000056111f6b1fe0 <+0>:     sub    $0x18,%rsp
+   0x000056111f6b1fe4 <+4>:     mov    %fs:0x28,%rsi
+   0x000056111f6b1fed <+13>:    mov    %rsi,0x8(%rsp)
+   0x000056111f6b1ff2 <+18>:    lea    0x4(%rsp),%rsi
+   0x000056111f6b1ff7 <+23>:    mov    %rsp,%rdi
+   0x000056111f6b1ffa <+26>:    call   0x56111f6b12c0 <swc_cursor_position@plt>
+   0x000056111f6b1fff <+31>:    mov    0x42a2(%rip),%r9        # 0x56111f6b62a8 <input+8>
+   0x000056111f6b2006 <+38>:    test   %al,%al
+   0x000056111f6b2008 <+40>:    je     0x56111f6b207d <cursor_tick+157>
+   0x000056111f6b200a <+42>:    lea    0x426f(%rip),%rdi        # 0x56111f6b6280 <compositor+32>
+   0x000056111f6b2011 <+49>:    mov    0x4270(%rip),%rcx        # 0x56111f6b6288 <compositor+40>
+   0x000056111f6b2018 <+56>:    mov    (%rsp),%edx
+   0x000056111f6b201b <+59>:    mov    0x4(%rsp),%eax
+   0x000056111f6b201f <+63>:    cmp    %rdi,%rcx
+   0x000056111f6b2022 <+66>:    je     0x56111f6b207d <cursor_tick+157>
+   0x000056111f6b2024 <+68>:    test   %edx,%edx
+   0x000056111f6b2026 <+70>:    lea    0xff(%rdx),%esi
+   0x000056111f6b202c <+76>:    lea    0xff(%rax),%r8d
+   0x000056111f6b2033 <+83>:    cmovns %edx,%esi
+--Type <RET> for more, q to quit, c to continue without paging--
+
+
+
+
+
+
+
+
+
+
 For help, type "help".
 Type "apropos word" to search for commands related to "word"...
 Reading symbols from /usr/local/bin/hevel...
