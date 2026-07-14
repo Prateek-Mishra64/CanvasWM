@@ -178,11 +178,6 @@ newscreen(struct swc_screen *swc)
   swc_screen_set_handler(swc, &screenhandler, s);
   printf("screen %dx%d\n", swc->geometry.width, swc->geometry.height);
 
-  if (!move_state.timer)
-    move_state.timer =
-        wl_event_loop_add_timer(compositor.evloop, cursor_tick, NULL);
-  if (move_state.timer)
-    wl_event_source_timer_update(move_state.timer, timerms);
 }
 
 void
@@ -236,9 +231,9 @@ window_move_begin(void)
     if (!compositor.focused)
         return;
 
-    if (!cursor_position(&x, &y))
-        return;
-
+    x = input.cursor.x;
+    y = input.cursor.y;
+    
     if (!swc_window_get_geometry(compositor.focused, &geometry))
         return;
 
@@ -332,11 +327,6 @@ window_move_tick(void *data)
     int32_t x, y;
     struct swc_rectangle geometry;
 
-    int32_t screen_height = 0;
-    int32_t screen_width  = 0;
-    int32_t screen_x      = 0;
-
-    bool edge_hit = false;
 
     (void)data;
 
@@ -346,22 +336,8 @@ window_move_tick(void *data)
     if (!compositor.focused)
         return 0;
 
-    /* Current screen geometry */
-    if (compositor.current_screen) {
-        screen_height = compositor.current_screen->swc->geometry.height;
-        screen_width  = compositor.current_screen->swc->geometry.width;
-        screen_x      = compositor.current_screen->swc->geometry.x;
-    }
-
-    if (screen_height == 0) {
-        window_schedule_move();
-        return 0;
-    }
-
-    if (!cursor_position(&x, &y)) {
-       window_schedule_move();
-       return 0;
-    }
+    x = input.cursor.x;
+    y = input.cursor.y;
 
     /* Smooth window movement */
     if (swc_window_get_geometry(compositor.focused, &geometry)) {
@@ -387,34 +363,7 @@ window_move_tick(void *data)
                                 new_y);
     }
 
-    /* Vertical viewport follow */
-
-    if (y < move_scroll_edge_threshold) {
-        edge_hit = true;
-        viewport_push(0, move_scroll_speed);
-    }
-    else if (y > screen_height - move_scroll_edge_threshold) {
-        edge_hit = true;
-        viewport_push(0, -move_scroll_speed);
-    }
-
-    /* Horizontal viewport follow */
-
-    if (compositor.current_screen) {
-
-        if (x < screen_x + move_scroll_edge_threshold) {
-            edge_hit = true;
-            viewport_push(move_scroll_speed, 0);
-        }
-        else if (x >
-                 screen_x + screen_width -
-                 move_scroll_edge_threshold) {
-            edge_hit = true;
-            viewport_push(-move_scroll_speed, 0);
-        }
-    }
-
-    viewport_set_active(edge_hit);
+    viewport_follow_window();
 
     window_schedule_move();
 

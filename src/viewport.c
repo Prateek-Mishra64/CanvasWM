@@ -1,6 +1,7 @@
 #include "viewport.h"
 #include "hevel.h"
-#include "window.h"
+#include "input.h"
+#include "action.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -8,7 +9,9 @@
 
 struct viewport_state viewport;
 
-void
+static int viewport_tick(void *data);
+
+static void
 viewport_schedule(void)
 {
     if (!viewport.timer)
@@ -20,60 +23,13 @@ viewport_schedule(void)
     wl_event_source_timer_update(viewport.timer, 1);
 }
 
-bool
-viewport_can_move_horizontally(void)
-{
-    return compositor.current_screen &&
-           compositor.current_screen->swc->geometry.width > 0;
-}
 
-void
-viewport_set_active(bool active)
-{
-    viewport.active = active;
-}
 
-bool
-viewport_active(void)
-{
-    return viewport.active;
-}
-
-void
-viewport_stop(void)
-{
-    viewport.pending_y   = 0;
-    viewport.pending_x = 0;
-
-    viewport.rem_x   = 0;
-    viewport.rem_y = 0;
-
-    viewport.active = false;
-
-    if (viewport.drag_timer) {
-        wl_event_source_remove(viewport.drag_timer);
-        viewport.drag_timer = NULL;
-    }
-}
-
-void
-viewport_push(int32_t dx,
-              int32_t dy)
-{
-    viewport.pending_x += dx;
-    viewport.pending_y   += dy;
-
-    viewport_schedule();
-}
-
-int
+static int
 viewport_tick(void *data)
 {
     struct window *w, *tmp;
     struct swc_rectangle geometry;
-
-    int32_t rem   = viewport.pending_y;
-    int32_t rem_x = viewport.pending_x;
 
     int32_t step;
     int32_t step_x;
@@ -84,23 +40,23 @@ viewport_tick(void *data)
         return 0;
 
     if (!viewport.active &&
-        rem == 0 &&
-        rem_x == 0) {
+        viewport.pending_x == 0 &&
+        viewport.pending_y == 0) {
         viewport_stop();
         return 0;
     }
 
-    step = rem / scrollease;
-    if (step == 0 && rem != 0)
-        step = rem > 0 ? 1 : -1;
+    step = viewport.pending_x / scrollease;
+    if (step == 0 && viewport.pending_x != 0)
+        step = viewport.pending_x > 0 ? 1 : -1;
     if (step > scrollcap)
         step = scrollcap;
     if (step < -scrollcap)
         step = -scrollcap;
 
-    step_x = rem_x / scrollease;
-    if (step_x == 0 && rem_x != 0)
-        step_x = rem_x > 0 ? 1 : -1;
+    step_x = viewport.pending_y / scrollease;
+    if (step_x == 0 && viewport.pending_y != 0)
+        step_x = viewport.pending_y > 0 ? 1 : -1;
     if (step_x > scrollcap)
         step_x = scrollcap;
     if (step_x < -scrollcap)
@@ -138,33 +94,141 @@ viewport_tick(void *data)
     return 0;
 }
 
+
+bool
+viewport_can_move_horizontally(void)
+{
+    return compositor.current_screen &&
+           compositor.current_screen->swc->geometry.width > 0;
+}
+
+void
+viewport_set_active(bool active)
+{
+    viewport.active = active;
+}
+
+bool
+viewport_active(void)
+{
+    return viewport.active;
+}
+
+void
+viewport_stop(void)
+{
+    viewport.pending_y   = 0;
+    viewport.pending_x = 0;
+
+    viewport.active = false;
+
+    if (viewport.pan_timer) {
+        wl_event_source_remove(viewport.pan_timer);
+        viewport.pan_timer = NULL;
+    }
+}
+
+void
+viewport_push(int32_t dx,
+              int32_t dy)
+{
+    viewport.pending_x += dx;
+    viewport.pending_y   += dy;
+
+    viewport_schedule();
+}
+
+void
+viewport_follow_window(void)
+{
+    if (!window_is_moving())
+        return;
+
+    if (!compositor.current_screen)
+        return;
+
+    int32_t x = input.cursor.x;
+    int32_t y = input.cursor.y;
+
+    struct swc_rectangle *screen =
+        &compositor.current_screen->swc->geometry;
+
+    viewport.active = false;
+
+    if (y < move_scroll_edge_threshold) {
+
+        viewport.active = true;
+        viewport_push(0, move_scroll_speed);
+
+    }
+    else if (y > screen->height - move_scroll_edge_threshold) {
+
+        viewport.active = true;
+        viewport_push(0, -move_scroll_speed);
+
+    }
+
+    if (x < screen->x + move_scroll_edge_threshold) {
+
+        viewport.active = true;
+        viewport_push(move_scroll_speed, 0);
+
+    }
+    else if (x >
+             screen->x +
+             screen->width -
+             move_scroll_edge_threshold) {
+
+        viewport.active = true;
+        viewport_push(-move_scroll_speed, 0);
+
+    }
+}
+
+
 void
 viewport_left(void)
 {
-    viewport_push(-scrollpx, 0);
-}
+    viewport.move_by_x = -scrollpx;
+    viewport.move_by_y = 0;
+    viewport.active = true;
+
+    viewport_schedule();}
 
 void
 viewport_right(void)
 {
-    viewport_push(scrollpx, 0);
+    viewport.move_by_x = scrollpx;
+    viewport.move_by_y = 0;
+    viewport.active = true;
+
+    viewport_schedule();
 }
+
 
 void
 viewport_top(void)
 {
-    viewport_push(0, -scrollpx);
+    viewport.move_by_x = 0;
+    viewport.move_by_y = -scrollpx;
+    viewport.active = true;
+
+    viewport_schedule();
 }
 
 void
 viewport_down(void)
 {
-    viewport_push(0, scrollpx);
+    viewport.move_by_x = 0;
+    viewport.move_by_y = scrollpx;
+    viewport.active = true;
+
+    viewport_schedule();
 }
 
 
-int
-viewport_drag_tick(void *data)
+static int
+viewport_sample_cursor(void *data)
 {
     int32_t x, y;
     int32_t dx, dy;
@@ -174,47 +238,44 @@ viewport_drag_tick(void *data)
     if (!viewport.active)
         return 0;
 
-    if (!cursor_position(&x, &y)) {
-        wl_event_source_timer_update(viewport.drag_timer,
-                                     timerms);
-        return 0;
-    }
+    x = input.cursor.x;
+    y = input.cursor.y;
 
-    dx = x - viewport.drag_last_x;
-    dy = y - viewport.drag_last_y;
+    dx = x - viewport.cursor_prev_x;
+    dy = y - viewport.cursor_prev_y;
 
-    viewport.drag_last_x = x;
-    viewport.drag_last_y = y;
+    viewport.cursor_prev_x = x;
+    viewport.cursor_prev_y = y;
 
     if (dx || dy)
         viewport_push(-dx, -dy);
 
-    wl_event_source_timer_update(viewport.drag_timer,
+    wl_event_source_timer_update(viewport.pan_timer,
                                  timerms);
 
     return 0;
 }
 
 void
-viewport_begin_navigation(void)
+viewport_begin_pan(void)
 {
     int32_t x, y;
 
-    if (!cursor_position(&x, &y))
-        return;
-
-    viewport.drag_last_x = x;
-    viewport.drag_last_y = y;
+    x = input.cursor.x;
+    y = input.cursor.y;
+    
+    viewport.cursor_prev_x = x;
+    viewport.cursor_prev_y = y;
 
     viewport.active = true;
 
-    if (!viewport.drag_timer)
-        viewport.drag_timer =
+    if (!viewport.pan_timer)
+        viewport.pan_timer =
             wl_event_loop_add_timer(compositor.evloop,
-                                    viewport_drag_tick,
+                                    viewport_sample_cursor,
                                     NULL);
 
-    wl_event_source_timer_update(viewport.drag_timer,
+    wl_event_source_timer_update(viewport.pan_timer,
                                  timerms);
 }
 

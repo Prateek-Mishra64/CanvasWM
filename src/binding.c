@@ -1,13 +1,13 @@
 #include "binding.h"
 #include "action.h"
 #include "spawn.h"
+#include "input.h"
 #include "../config.h"
 #include <stdbool.h>
 
+
 bool
-binding_dispatch(enum modifier modifiers,
-                 enum bind_symbol symbol,
-                 bool held)
+binding_resolve(void)
 {
     const struct binding *binding;
 
@@ -15,10 +15,10 @@ binding_dispatch(enum modifier modifiers,
 
         binding = &bindings[i];
 
-        if (binding->modifiers != modifiers)
+        if (binding->modifiers != input.modifiers)
             continue;
 
-        if (binding->symbol != symbol)
+        if (binding->symbol != input.symbol)
             continue;
 
         /*
@@ -29,11 +29,11 @@ binding_dispatch(enum modifier modifiers,
         switch (binding->type) {
 
         case BIND_ACTION:
-            action_execute(binding->action, held);
+            action_execute(binding->action, input.held);
             break;
 
         case BIND_EXEC:
-            if (!held)
+            if (!input.held)
                 spawn_launch(binding->command, 1000, 800);
             break;
         }

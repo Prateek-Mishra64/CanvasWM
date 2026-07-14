@@ -1,7 +1,5 @@
 #include "zoom.h"
 #include "hevel.h"
-#include "scroll.h"
-#include "window.h"
 
 
 int

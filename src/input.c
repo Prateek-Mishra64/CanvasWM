@@ -1,18 +1,23 @@
 #include "input.h"
 #include "hevel.h"
-#include "binding.h"
 
 
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
 
-
+static struct wl_event_source *cursor_timer;
+static bool left_down;
+static bool middle_down;
+static bool right_down;
+static bool dragging;
+static bool cursor_position_raw(int32_t *, int32_t *);
+bool cursor_position(int32_t *, int32_t *);
 
 struct input_state input;
 
 static void normalize_keyboard(xkb_keysym_t key, bool held);
-static void normalize_trackpad(enum trackpad_gesture gesture, bool held);
+static void normalize_trackpad(enum input_trackpad_gesture gesture, bool held);
 static void normalize_mouse(bool dragging,
                             bool left,
                             bool middle,
@@ -21,15 +26,15 @@ static void normalize_mouse(bool dragging,
 static void normalize_scroll(uint32_t axis,
                              int32_t value120);
 
-/* Forward normalized input into the binding layer */
-void
-input_dispatch(enum bind_symbol symbol,
+static void
+input_dispatch(enum input_symbol symbol,
                bool held)
 {
-    if (symbol == SYMBOL_NONE)
+    if (symbol == INPUT_NONE)
         return;
+    input.symbol = symbol;
+    input.held = held;
 
-    binding_dispatch(input.modifiers, symbol, held);
 }
 
 void
@@ -40,7 +45,7 @@ input_keyboard(xkb_keysym_t key,
 }
 
 void
-input_trackpad(enum trackpad_gesture gesture,
+input_trackpad(enum input_trackpad_gesture gesture,
                bool held)
 {
     normalize_trackpad(gesture, held);
@@ -302,7 +307,7 @@ normalize_keyboard(xkb_keysym_t key,
 
 /* ---------- Trackpad ---------- */
 static void
-normalize_trackpad(enum trackpad_gesture gesture,
+normalize_trackpad(enum input_trackpad_gesture gesture,
                    bool held)
 {
     switch (gesture) {
@@ -388,15 +393,15 @@ button(void *data,
     switch (button) {
 
     case BTN_LEFT:
-        input.left_down = held;
+        left_down = held;
         break;
 
     case BTN_MIDDLE:
-        input.middle_down = held;
+        middle_down = held;
         break;
 
     case BTN_RIGHT:
-        input.right_down = held;
+        right_down = held;
         break;
 
     default:
@@ -404,19 +409,19 @@ button(void *data,
         return;
     }
 
-    input.dragging =
-        input.left_down ||
-        input.middle_down ||
-        input.right_down;
+    dragging =
+        left_down ||
+        middle_down ||
+        right_down;
 
-   normalize_mouse(input.dragging,
-                input.left_down,
-                input.middle_down,
-                input.right_down,
+   normalize_mouse(dragging,
+                left_down,
+                middle_down,
+                right_down,
                 held);
 }
 
-int
+static int
 cursor_tick(void *data)
 {
   (void)data;
@@ -425,7 +430,7 @@ cursor_tick(void *data)
   struct screen *ns = NULL;
 
   if (!cursor_position_raw(&x, &y)) {
-    wl_event_source_timer_update(input.cursor_timer, timerms);
+    wl_event_source_timer_update(cursor_timer, timerms);
     return 0;
   } 
 
@@ -442,18 +447,18 @@ cursor_tick(void *data)
 
     }
 
-  wl_event_source_timer_update(input.cursor_timer, timerms);
+  wl_event_source_timer_update(cursor_timer, timerms);
   return 0;
 }
 
-bool
+static bool
 cursor_position_raw(int32_t *x, int32_t *y)
 {
   int32_t fx, fy;
 
   if (!swc_cursor_position(&fx, &fy)) return false;
-  *x = wl_fixed_to_int(fx);
-  *y = wl_fixed_to_int(fy);
+  *x = fx;
+  *y = fy;
   return true;
 }
 
@@ -469,8 +474,8 @@ cursor_position(int32_t *x, int32_t *y)
                    compositor.current_screen->swc->geometry.width / 2;
       int32_t cy = compositor.current_screen->swc->geometry.y +
                    compositor.current_screen->swc->geometry.height / 2;
-      *x = (int32_t)((*x - cx) / zoom) + cx;
-      *y = (int32_t)((*y - cy) / zoom) + cy;
+      input.cursor.x = (int32_t)((*x - cx) / zoom) + cx;
+      input.cursor.y = (int32_t)((*y - cy) / zoom) + cy;
     }
   }
 

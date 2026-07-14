@@ -126,17 +126,12 @@ main(void)
   evloop = wl_display_get_event_loop(compositor.display);
   compositor.evloop = evloop;
 
-  fprintf(stderr, "HEVEL PID = %d\n", getpid());
-  fflush(stderr);
-
-  fprintf(stderr, "Attach gdb now and press Enter...\n");
-  fflush(stderr);
-
-
   if (!swc_initialize(compositor.display, evloop, &manager)) {
     fprintf(stderr, "cannot initialize swc\n");
     return 1;
   }
+
+
 
   maybe_enable_nein_cursor_theme();
   swc_set_raw_key_handler(canvas_raw_key);
@@ -183,7 +178,6 @@ main(void)
   fflush(stderr);
 
   swc_finalize();
-
   fprintf(stderr, "[DEBUG] AFTER swc_finalize()\n");
   fflush(stderr);
 

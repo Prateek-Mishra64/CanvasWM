@@ -18,7 +18,7 @@ action_execute(enum action action,
 
     case ACTION_VIEWPORT_NAVIGATE:
         if (held)
-            viewport_begin_navigation();
+            viewport_begin_pan();
         break;
 
 
@@ -69,10 +69,10 @@ action_execute(enum action action,
 
     case ACTION_WINDOW_JUMP: {
         if (!held) {
-          int32_t x, y;
-          cursor_position_raw(&x, &y);
-          window_jump(window_nearest(x, y));
-        }
+          int32_t x = input.cursor.x;
+          int32_t y = input.cursor.y;
+
+          window_jump(window_nearest(x, y));        }
         break;
       }
 
