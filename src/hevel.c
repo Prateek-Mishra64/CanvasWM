@@ -1,6 +1,11 @@
 #include "hevel.h"
 #include "binding.h"
 
+#include <signal.h>
+#include <stdlib.h>
+#include <stdio.h>
+
+
 struct compositor_state compositor = {0};
 struct chord_state chord = {0};
 struct zoom_state zoom = {0};
@@ -80,6 +85,32 @@ sig(int s)
   wl_display_terminate(compositor.display);
 }
 
+static void
+exit_handler(void)
+{
+    fprintf(stderr, "[DEBUG] atexit() called\n");
+    fflush(stderr);
+}
+
+static void
+debug_signal(int sig)
+{
+    fprintf(stderr, "[DEBUG] received signal %d\n", sig);
+    fflush(stderr);
+
+    signal(sig, SIG_DFL);
+    raise(sig);
+}
+
+static void
+sig(int s)
+{
+    fprintf(stderr, "[DEBUG] sig() called with %d\n", s);
+    fflush(stderr);
+
+    wl_display_terminate(compositor.display);
+}
+
 
 int
 main(void)
@@ -125,35 +156,47 @@ main(void)
   printf("%s\n", sock);
   setenv("WAYLAND_DISPLAY", sock, 1);
 
+    atexit(exit_handler);
+
   signal(SIGTERM, sig);
   signal(SIGINT, sig);
 
- /* Everything has been initialized */
+  signal(SIGABRT, debug_signal);
+  signal(SIGSEGV, debug_signal);
+  signal(SIGBUS, debug_signal);
+  signal(SIGILL, debug_signal);
+  signal(SIGFPE, debug_signal);
+  signal(SIGPIPE, debug_signal);
+  signal(SIGQUIT, debug_signal);
 
-fprintf(stderr, "BEFORE wl_display_run\n");
-fflush(stderr);
+  fprintf(stderr, "[DEBUG] BEFORE wl_display_run()\n");
+  fflush(stderr);
 
-wl_display_run(compositor.display);
+  wl_display_run(compositor.display);
 
-fprintf(stderr, "AFTER wl_display_run\n");
-fflush(stderr);
+  fprintf(stderr, "[DEBUG] AFTER wl_display_run()\n");
+  fflush(stderr);
 
-fprintf(stderr, "BEFORE swc_finalize\n");
-fflush(stderr);
+  fprintf(stderr, "[DEBUG] BEFORE swc_finalize()\n");
+  fflush(stderr);
 
-swc_finalize();
+  swc_finalize();
 
-fprintf(stderr, "AFTER swc_finalize\n");
-fflush(stderr);
+  fprintf(stderr, "[DEBUG] AFTER swc_finalize()\n");
+  fflush(stderr);
 
-fprintf(stderr, "BEFORE wl_display_destroy\n");
-fflush(stderr);
+  fprintf(stderr, "[DEBUG] BEFORE wl_display_destroy()\n");
+  fflush(stderr);
 
-wl_display_destroy(compositor.display);
+  wl_display_destroy(compositor.display);
 
-fprintf(stderr, "AFTER wl_display_destroy\n");
-fflush(stderr);
+  fprintf(stderr, "[DEBUG] AFTER wl_display_destroy()\n");
+  fflush(stderr);
 
-return 0;
+  fprintf(stderr, "[DEBUG] RETURNING FROM MAIN\n");
+  fflush(stderr);
+
   return 0;
+
 }
+  
