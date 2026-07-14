@@ -79,12 +79,6 @@ static const struct swc_manager manager = {
 };
 
 
-static void
-sig(int s)
-{
-  (void)s;
-  wl_display_terminate(compositor.display);
-}
 
 static void
 exit_handler(void)
@@ -138,7 +132,6 @@ main(void)
   fprintf(stderr, "Attach gdb now and press Enter...\n");
   fflush(stderr);
 
-  getchar();
 
   if (!swc_initialize(compositor.display, evloop, &manager)) {
     fprintf(stderr, "cannot initialize swc\n");
