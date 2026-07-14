@@ -128,10 +128,32 @@ main(void)
   signal(SIGTERM, sig);
   signal(SIGINT, sig);
 
-  wl_display_run(compositor.display);
+ /* Everything has been initialized */
 
-  swc_finalize();
-  wl_display_destroy(compositor.display);
+fprintf(stderr, "BEFORE wl_display_run\n");
+fflush(stderr);
 
+wl_display_run(compositor.display);
+
+fprintf(stderr, "AFTER wl_display_run\n");
+fflush(stderr);
+
+fprintf(stderr, "BEFORE swc_finalize\n");
+fflush(stderr);
+
+swc_finalize();
+
+fprintf(stderr, "AFTER swc_finalize\n");
+fflush(stderr);
+
+fprintf(stderr, "BEFORE wl_display_destroy\n");
+fflush(stderr);
+
+wl_display_destroy(compositor.display);
+
+fprintf(stderr, "AFTER wl_display_destroy\n");
+fflush(stderr);
+
+return 0;
   return 0;
 }
