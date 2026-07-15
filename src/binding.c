@@ -7,7 +7,7 @@
 
 
 bool
-binding_resolve(void)
+binding_resolver(void)
 {
     const struct binding *binding;
 

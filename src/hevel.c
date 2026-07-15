@@ -1,5 +1,8 @@
 #include "hevel.h"
 #include "binding.h"
+#include "action.h"
+#include "viewport.h"
+#include "spawn.h"
 
 #include <signal.h>
 #include <stdlib.h>
@@ -60,23 +63,63 @@ newdevice(struct libinput_device *dev)
 }
 
 
-static bool
-canvas_raw_key(xkb_keysym_t sym,
-               uint32_t modifiers,
-               bool held)
-{
-    input.modifiers = modifiers;
-
-    input_keyboard(sym, held);
-
-    return true;
-}
-
 static const struct swc_manager manager = {
     .new_screen = newscreen,
     .new_window = newwindow,
     .new_device = newdevice,
 };
+
+static void
+test_quit(void *data,
+          uint32_t time,
+          uint32_t value,
+          uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
+        compositor_quit();
+}
+
+static void
+test_binding(void *data,
+             uint32_t time,
+             uint32_t value,
+             uint32_t state)
+{
+    (void)data;
+    (void)time;
+
+    if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
+        return;
+
+    switch (value) {
+
+    case XKB_KEY_h:
+        viewport_left();
+        break;
+
+    case XKB_KEY_l:
+        viewport_right();
+        break;
+
+    case XKB_KEY_k:
+        viewport_top();
+        break;
+
+    case XKB_KEY_j:
+        viewport_down();
+        break;
+
+    case XKB_KEY_t:
+        spawn_launch("kitty", 1000, 800);
+        break;
+
+
+    }
+}
 
 
 
@@ -134,14 +177,24 @@ main(void)
 
 
   maybe_enable_nein_cursor_theme();
-  swc_set_raw_key_handler(canvas_raw_key);
 
 
   /* we can bind mouse buttons using SWC_MOD_ANY */
   swc_add_binding(SWC_BINDING_BUTTON, SWC_MOD_ANY, BTN_LEFT, button, NULL);
   swc_add_binding(SWC_BINDING_BUTTON, SWC_MOD_ANY, BTN_MIDDLE, button, NULL);
   swc_add_binding(SWC_BINDING_BUTTON, SWC_MOD_ANY, BTN_RIGHT, button, NULL);
-  
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO | SWC_MOD_SHIFT,
+    XKB_KEY_q,
+    test_quit,
+    NULL);
+  swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_h, test_binding, NULL);
+  swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_j, test_binding, NULL);
+  swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_k, test_binding, NULL);
+  swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_l, test_binding, NULL);
+  swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO | SWC_MOD_SHIFT, XKB_KEY_q, test_binding, NULL);  
+   
   swc_add_axis_binding(SWC_MOD_ANY, 0, axis, NULL);
   swc_add_axis_binding(SWC_MOD_ANY, 1, axis, NULL);
   sock = wl_display_add_socket_auto(compositor.display);

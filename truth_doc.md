@@ -307,6 +307,49 @@ Dump of assembler code for function cursor_tick:
 
 
 
+[swc:../libswc/drm.c:163] DEBUG: /dev/dri/card1 is the primary GPU
+# find_driver: Trying DRM driver `dumb'
+[spawn_launch] kitty
+fork returned 2251
+screen 1920x1200
+fork returned 0
+wayland-0
+[DEBUG] BEFORE wl_display_run()
+[swc:../libswc/compositor.c:1695] DEBUG: Performing update
+[swc:../libswc/compositor.c:399] DEBUG: Rendering to target { x: 0, y: 0, w: 1920, h: 1200 }
+(WW) Option "-listen" for file descriptors is deprecated
+Please use "-listenfd" instead.
+(WW) Option "-listen" for file descriptors is deprecated
+Please use "-listenfd" instead.
+Xwayland glamor: GBM Wayland interfaces not available
+Failed to initialize glamor, falling back to sw
+_amdgpu_device_initialize: amdgpu_query_info(ACCEL_WORKING) failed (-13)
+[0.096] Ignoring unknown config key: background_shader
+[0.100] [glfw error 65544]: X11: The DISPLAY environment variable is missing
+GLFW initialization failed
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Multiple symbols for level 1/group 1 on key <FK23>
+>                   Using F23, ignoring XF86TouchpadOff
+> Warning:          Symbol map for key <FK23> redefined
+>                   Using last definition for conflicting fields
+> Warning:          Symbol map for key <FK24> redefined
+>                   Using last definition for conflicting fields
+Errors from xkbcomp are not fatal to the X server
+The XKEYBOARD keymap compiler (xkbcomp) reports:
+> Warning:          Unsupported maximum keycode 709, clipping.
+>                   X11 cannot support keycodes above 255.
+> Warning:          Virtual modifier Hyper multiply defined
+>                   Using 0, ignoring 0
+> Warning:          Virtual modifier ScrollLock multiply defined
+>                   Using 0, ignoring 0
+Errors from xkbcomp are not fatal to the X server
+[DEBUG] AFTER wl_display_run()
+[DEBUG] BEFORE swc_finalize()
+[DEBUG] AFTER swc_finalize()
+[DEBUG] BEFORE wl_display_destroy()
+[DEBUG] AFTER wl_display_destroy()
+[DEBUG] RETURNING FROM MAIN
+[DEBUG] atexit() called
 
 
 

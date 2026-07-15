@@ -35,7 +35,7 @@ input_dispatch(enum input_symbol symbol,
         return;
     input.symbol = symbol;
     input.held = held;
-    binding_resolve();
+    binding_resolver();
 
 }
 
