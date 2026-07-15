@@ -24,6 +24,7 @@ static void
 windowentered(void *data)
 {
     struct window *w = data;
+    swc_window_set_stacked(w->swc);
 
     focus_window(w->swc, "pointer");
 }
@@ -73,6 +74,10 @@ focus_window_reveal(struct swc_window *swc,
     if (!swc || !compositor.current_screen)
         return;
 
+    /* Already in normal view. */
+    if (swc_get_zoom() >= 1.0f)
+        return;
+
     if (!swc_window_get_geometry(swc, &window_geom))
         return;
 
@@ -96,27 +101,25 @@ focus_window_reveal(struct swc_window *swc,
         compositor.current_screen->swc->geometry.y +
         (int32_t)compositor.current_screen->swc->geometry.height / 2;
 
-    viewport_push(
-        screen_center_x - window_center_x,
-        screen_center_y - window_center_y);
+    viewport_push(screen_center_x - window_center_x,
+                  screen_center_y - window_center_y);
 
-    if (enable_zoom &&
-        swc_get_zoom() != 1.0f) {
+    if (enable_zoom) {
 
         zoom.target = 1.0f;
 
-        if (!zoom.timer)
+        if (!zoom.timer) {
             zoom.timer =
-                wl_event_loop_add_timer(
-                    compositor.evloop,
-                    zoom_tick,
-                    NULL);
+                wl_event_loop_add_timer(compositor.evloop,
+                                        zoom_tick,
+                                        NULL);
+        }
 
-        wl_event_source_timer_update(
-            zoom.timer,
-            1);
+        if (zoom.timer)
+            wl_event_source_timer_update(zoom.timer, 1);
     }
 }
+
 
 bool
 is_visible(struct swc_window *w, struct screen *screen)
@@ -237,14 +240,19 @@ window_toggle_sticky(void)
     w->sticky = !w->sticky;
 }
 
+
 void
 window_toggle_fullscreen(void)
 {
-    if (!compositor.focused)
+    struct window *w = focused_window();
+
+    if (!w)
         return;
 
+    w->fullscreen = !w->fullscreen;
+
     swc_window_set_fullscreen(
-        compositor.focused,
+        w->swc,
         compositor.current_screen->swc);
 }
 
@@ -352,13 +360,9 @@ window_jump(struct swc_window *target)
     if (!target)
         return;
 
-    bool center = focus_center;
-    focus_center = true;
-
-    focus_window(target, "jump");
-
-    focus_center = center;
+    focus_window_reveal(target, "jump");
 }
+
 
 int
 window_move_tick(void *data)

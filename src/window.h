@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 #include <swc.h>
+#include <wayland-util.h>
+#include <wayland-server.h>
 
 struct screen;
 
@@ -30,6 +32,17 @@ window_move_begin(void);
 
 void
 window_end_move(void);
+
+struct window {
+    struct wl_list link;
+
+    struct swc_window *swc;
+
+    pid_t pid;
+
+    bool sticky;
+    bool fullscreen;
+};
 
 
 void

@@ -2,6 +2,7 @@
 #include "binding.h"
 #include "action.h"
 #include "viewport.h"
+#include "window.h"
 #include "spawn.h"
 
 #include <signal.h>
@@ -69,59 +70,159 @@ static const struct swc_manager manager = {
     .new_device = newdevice,
 };
 
+#define REQUIRE_PRESS()                     \
+    do {                                    \
+        if (state != WL_KEYBOARD_KEY_STATE_PRESSED) \
+            return;                         \
+    } while (0)
+
 static void
-test_quit(void *data,
-          uint32_t time,
-          uint32_t value,
-          uint32_t state)
+bind_quit(void *data, uint32_t time, uint32_t value, uint32_t state)
 {
     (void)data;
     (void)time;
     (void)value;
 
-    if (state == WL_KEYBOARD_KEY_STATE_PRESSED)
-        compositor_quit();
+    REQUIRE_PRESS();
+
+    compositor_quit();
 }
 
 static void
-test_binding(void *data,
-             uint32_t time,
-             uint32_t value,
-             uint32_t state)
+bind_spawn(void *data, uint32_t time, uint32_t value, uint32_t state)
 {
     (void)data;
     (void)time;
+    (void)value;
 
-    if (state != WL_KEYBOARD_KEY_STATE_PRESSED)
-        return;
+    REQUIRE_PRESS();
 
-    switch (value) {
-
-    case XKB_KEY_h:
-        viewport_left();
-        break;
-
-    case XKB_KEY_l:
-        viewport_right();
-        break;
-
-    case XKB_KEY_k:
-        viewport_top();
-        break;
-
-    case XKB_KEY_j:
-        viewport_down();
-        break;
-
-    case XKB_KEY_t:
-        spawn_launch("kitty", 1000, 800);
-        break;
-
-
-    }
+    spawn_launch("kitty", 1000, 800);
 }
 
+static void
+bind_viewport_left(void *data, uint32_t time, uint32_t value, uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
 
+    REQUIRE_PRESS();
+
+    viewport_left();
+}
+
+static void
+bind_viewport_right(void *data, uint32_t time, uint32_t value, uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    REQUIRE_PRESS();
+
+    viewport_right();
+}
+
+static void
+bind_viewport_up(void *data, uint32_t time, uint32_t value, uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    REQUIRE_PRESS();
+
+    viewport_top();
+}
+
+static void
+bind_viewport_down(void *data, uint32_t time, uint32_t value, uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    REQUIRE_PRESS();
+
+    viewport_down();
+}
+
+static void
+bind_window_move(void *data,
+                 uint32_t time,
+                 uint32_t value,
+                 uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    if (state == WL_KEYBOARD_KEY_STATE_RELEASED)
+        return;
+
+    window_move_begin();
+}
+
+static void
+bind_window_resize(void *data,
+                   uint32_t time,
+                   uint32_t value,
+                   uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    REQUIRE_PRESS();
+
+    window_resize();
+}
+
+static void
+bind_window_close(void *data,
+                  uint32_t time,
+                  uint32_t value,
+                  uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    REQUIRE_PRESS();
+
+    window_close();
+}
+
+static void
+bind_window_fullscreen(void *data,
+                       uint32_t time,
+                       uint32_t value,
+                       uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    REQUIRE_PRESS();
+
+    window_toggle_fullscreen();
+}
+
+static void
+bind_window_sticky(void *data,
+                   uint32_t time,
+                   uint32_t value,
+                   uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    REQUIRE_PRESS();
+
+    window_toggle_sticky();
+}
 
 static void
 exit_handler(void)
@@ -180,20 +281,91 @@ main(void)
 
 
   /* we can bind mouse buttons using SWC_MOD_ANY */
-  swc_add_binding(SWC_BINDING_BUTTON, SWC_MOD_ANY, BTN_LEFT, button, NULL);
-  swc_add_binding(SWC_BINDING_BUTTON, SWC_MOD_ANY, BTN_MIDDLE, button, NULL);
-  swc_add_binding(SWC_BINDING_BUTTON, SWC_MOD_ANY, BTN_RIGHT, button, NULL);
+  /* Quit */
   swc_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO | SWC_MOD_SHIFT,
     XKB_KEY_q,
-    test_quit,
+    bind_quit,
     NULL);
-  swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_h, test_binding, NULL);
-  swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_j, test_binding, NULL);
-  swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_k, test_binding, NULL);
-  swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO, XKB_KEY_l, test_binding, NULL);
-  swc_add_binding(SWC_BINDING_KEY, SWC_MOD_LOGO | SWC_MOD_SHIFT, XKB_KEY_q, test_binding, NULL);  
+
+/* Spawn */
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO,
+    XKB_KEY_t,
+    bind_spawn,
+    NULL);
+
+/* Viewport navigation */
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO,
+    XKB_KEY_h,
+    bind_viewport_left,
+    NULL);
+
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO,
+    XKB_KEY_j,
+    bind_viewport_down,
+    NULL);
+
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO,
+    XKB_KEY_k,
+    bind_viewport_up,
+    NULL);
+
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO,
+    XKB_KEY_l,
+    bind_viewport_right,
+    NULL);
+
+/* Window */
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO,
+    XKB_KEY_f,
+    bind_window_fullscreen,
+    NULL);
+
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO,
+    XKB_KEY_c,
+    bind_window_close,
+    NULL);
+
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO,
+    XKB_KEY_x,
+    bind_window_sticky,
+    NULL);
+
+
+  swc_add_binding(SWC_BINDING_BUTTON,
+                SWC_MOD_ANY,
+                BTN_LEFT,
+                button,
+                NULL);
+
+  swc_add_binding(SWC_BINDING_BUTTON,
+                SWC_MOD_ANY,
+                BTN_MIDDLE,
+                button,
+                NULL);
+
+  swc_add_binding(SWC_BINDING_BUTTON,
+                SWC_MOD_ANY,
+                BTN_RIGHT,
+                button,
+                NULL);
    
   swc_add_axis_binding(SWC_MOD_ANY, 0, axis, NULL);
   swc_add_axis_binding(SWC_MOD_ANY, 1, axis, NULL);

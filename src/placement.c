@@ -1,6 +1,7 @@
 #include "hevel.h"
 #include "placement.h"
 #include "spawn.h"
+#include "window.h"
 
 /*
  * Every window begins at the origin.
@@ -34,9 +35,17 @@ placement_compute_origin(struct swc_rectangle *origin)
      * While a fullscreen window has focus, temporarily relocate the
      * origin beside it.
      */
-    if (compositor.focused &&
-         (false)) {
+    struct window *focused = NULL;
+    struct window *w;
 
+    wl_list_for_each(w, &compositor.windows, link) {
+    if (w->swc == compositor.focused) {
+        focused = w;
+        break;
+        }
+    }
+
+    if (focused && focused->fullscreen) {
         struct swc_rectangle geometry;
 
         if (swc_window_get_geometry(compositor.focused, &geometry)) {
@@ -68,7 +77,7 @@ placement_decide(const struct swc_rectangle *candidate,
          * A focused fullscreen window only establishes the temporary
          * origin. It never becomes the cascade parent.
          */
-        if (w->swc == compositor.focused)
+        if (w->fullscreen)
             continue;
 
         bool fully_hidden =

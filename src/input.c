@@ -1,6 +1,7 @@
 #include "input.h"
 #include "hevel.h"
 #include "binding.h"
+#include "viewport.h"
 
 
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -372,16 +373,26 @@ normalize_scroll(uint32_t axis,
 }
 
 void
-axis(void *data, uint32_t time, uint32_t axis, int32_t value120)
+axis(void *data,
+     uint32_t time,
+     uint32_t axis,
+     int32_t value120)
 {
-  
-  (void)data;
-  (void)time;
+    (void)data;
+    (void)time;
 
+    if (input.modifiers & SWC_MOD_LOGO) {
 
- normalize_scroll(axis, value120);
+        if (value120 < 0)
+            zoom_in();
+        else
+            zoom_out();
+
+        return;
+    }
+
+    normalize_scroll(axis, value120);
 }
-
 
 void
 button(void *data,
@@ -392,7 +403,54 @@ button(void *data,
     (void)data;
     (void)time;
 
-    bool held = (state == WL_POINTER_BUTTON_STATE_PRESSED);
+    bool held =
+        state == WL_POINTER_BUTTON_STATE_PRESSED;
+    
+    printf("mods=%u button=%u held=%d\n",
+           input.modifiers,
+           button,
+           held);
+    /*
+     * Hybrid mouse actions.
+     */
+
+    if (button == BTN_LEFT) {
+
+        /* Super + Shift + Left Drag -> Window Move */
+        if ((input.modifiers & (MOD_SUPER | MOD_SHIFT))
+            == (MOD_SUPER | MOD_SHIFT)) {
+
+            if (held)
+                window_move_begin();
+
+            return;
+        }
+
+        /* Super + Left Drag -> Viewport Pan */
+        if (input.modifiers & MOD_SUPER) {
+
+            if (held)
+                viewport_begin_pan();
+
+            else
+                viewport_stop();
+
+            return;
+        }
+    }
+
+    if (button == BTN_RIGHT) {
+
+        /* Super + Right Drag -> Resize */
+        if ((input.modifiers & MOD_SUPER) && held) {
+            window_resize();
+            return;
+        }
+    }
+
+    /*
+     * Normal mouse behaviour.
+     */
 
     switch (button) {
 
@@ -418,12 +476,13 @@ button(void *data,
         middle_down ||
         right_down;
 
-   normalize_mouse(dragging,
-                left_down,
-                middle_down,
-                right_down,
-                held);
+    normalize_mouse(dragging,
+                    left_down,
+                    middle_down,
+                    right_down,
+                    held);
 }
+
 
 static int
 cursor_tick(void *data)

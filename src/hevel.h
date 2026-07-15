@@ -44,13 +44,6 @@ typedef enum {
   MODE_SELECT,
 } chord_mode;
 
-struct window {
-  struct swc_window *swc;
-  struct wl_list link;
-
-  pid_t pid;
-  bool sticky;
-};
 
 struct screen {
   struct swc_screen *swc;
