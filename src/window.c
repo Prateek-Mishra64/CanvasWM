@@ -20,6 +20,14 @@ focused_window(void)
     return NULL;
 }
 
+static void
+windowentered(void *data)
+{
+    struct window *w = data;
+
+    focus_window(w->swc, "pointer");
+}
+
 
 
 void
@@ -51,35 +59,63 @@ focus_window(struct swc_window *swc, const char *reason)
   /* center the focused window: both axes in drag mode, vertical only in scroll
    * wheel mode, only when visible or jumping to it, else you can center
    * offscreen windows */
-  if (focus_center == true && swc && compositor.current_screen &&
-      (is_visible(compositor.focused, compositor.current_screen) ||
-       chord.mode == MODE_JUMP)) {
+
+}
+
+void
+focus_window_reveal(struct swc_window *swc,
+                    const char *reason)
+{
     struct swc_rectangle window_geom;
 
-    if (swc_window_get_geometry(swc, &window_geom)) {
-      /* skip if window has no size yet (not configured by client) */
-      if (window_geom.width == 0 || window_geom.height == 0) return;
+    focus_window(swc, reason);
 
-      int32_t window_center_x = window_geom.x + (int32_t)window_geom.width / 2;
-      int32_t window_center_y = window_geom.y + (int32_t)window_geom.height / 2;
-      int32_t screen_center_x =
-          compositor.current_screen->swc->geometry.x +
-          (int32_t)compositor.current_screen->swc->geometry.width / 2;
-      int32_t screen_center_y =
-          compositor.current_screen->swc->geometry.y +
-          (int32_t)compositor.current_screen->swc->geometry.height / 2;
+    if (!swc || !compositor.current_screen)
+        return;
 
+    if (!swc_window_get_geometry(swc, &window_geom))
+        return;
+
+    if (window_geom.width == 0 ||
+        window_geom.height == 0)
+        return;
+
+    int32_t window_center_x =
+        window_geom.x +
+        (int32_t)window_geom.width / 2;
+
+    int32_t window_center_y =
+        window_geom.y +
+        (int32_t)window_geom.height / 2;
+
+    int32_t screen_center_x =
+        compositor.current_screen->swc->geometry.x +
+        (int32_t)compositor.current_screen->swc->geometry.width / 2;
+
+    int32_t screen_center_y =
+        compositor.current_screen->swc->geometry.y +
+        (int32_t)compositor.current_screen->swc->geometry.height / 2;
+
+    viewport_push(
+        screen_center_x - window_center_x,
+        screen_center_y - window_center_y);
+
+    if (enable_zoom &&
+        swc_get_zoom() != 1.0f) {
+
+        zoom.target = 1.0f;
+
+        if (!zoom.timer)
+            zoom.timer =
+                wl_event_loop_add_timer(
+                    compositor.evloop,
+                    zoom_tick,
+                    NULL);
+
+        wl_event_source_timer_update(
+            zoom.timer,
+            1);
     }
-  }
-
-   /* zoom to default size when focusing a window */
-  if (enable_zoom && swc && swc_get_zoom() != 1.0f) {
-    zoom.target = 1.0f;
-    if (!zoom.timer)
-      zoom.timer = wl_event_loop_add_timer(compositor.evloop, zoom_tick, NULL);
-    if (zoom.timer) wl_event_source_timer_update(zoom.timer, 1);
-  }
-
 }
 
 bool
@@ -124,6 +160,7 @@ windowdestroy(void *data)
 
 static const struct swc_window_handler windowhandler = {
     .destroy = windowdestroy,
+    .entered = windowentered,
 };
 
 void
@@ -175,8 +212,9 @@ newscreen(struct swc_screen *swc)
   if (!s) return;
   s->swc = swc;
   wl_list_insert(&compositor.screens, &s->link);
+  if (!compositor.current_screen)
+    compositor.current_screen = s;
   swc_screen_set_handler(swc, &screenhandler, s);
-  spawn_launch("kitty", 1000, 800);
   printf("screen %dx%d\n", swc->geometry.width, swc->geometry.height);
 
 }

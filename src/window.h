@@ -21,6 +21,9 @@ window_is_moving(void);
 int
 window_move_tick(void *data);
 
+void
+focus_window_reveal(struct swc_window *swc,
+                    const char *reason);
 
 void
 window_move_begin(void);
