@@ -8,6 +8,27 @@
 #include <stdint.h>
 
 struct viewport_state viewport;
+const struct canvas_origin *
+viewport_origin(void)
+{
+    return &viewport.origin;
+}
+
+
+static void
+viewport_update_screen(void)
+{
+    if (!compositor.current_screen)
+        return;
+
+    struct swc_rectangle *g =
+        &compositor.current_screen->swc->geometry;
+
+    viewport.screen.x = g->x;
+    viewport.screen.y = g->y;
+    viewport.screen.width = g->width;
+    viewport.screen.height = g->height;
+}
 
 static int viewport_tick(void *data);
 
@@ -27,7 +48,8 @@ viewport_schedule(void)
 
 static int
 viewport_tick(void *data)
-{
+{   
+    viewport_update_screen();
     struct window *w, *tmp;
     struct swc_rectangle geometry;
 
@@ -39,28 +61,32 @@ viewport_tick(void *data)
     if (!viewport.timer)
         return 0;
 
-    if (!viewport.active &&
-        viewport.pending_x == 0 &&
-        viewport.pending_y == 0) {
+    if (!viewport.moving &&
+        viewport.request_x == 0 &&
+        viewport.request_y == 0) {
+        viewport.moving = false;
         viewport_stop();
         return 0;
     }
 
-    step = viewport.pending_x / scrollease;
-    if (step == 0 && viewport.pending_x != 0)
-        step = viewport.pending_x > 0 ? 1 : -1;
+    step = viewport.request_x / scrollease;
+    if (step == 0 && viewport.request_x != 0)
+        step = viewport.request_x > 0 ? 1 : -1;
     if (step > scrollcap)
         step = scrollcap;
     if (step < -scrollcap)
         step = -scrollcap;
 
-    step_x = viewport.pending_y / scrollease;
-    if (step_x == 0 && viewport.pending_y != 0)
-        step_x = viewport.pending_y > 0 ? 1 : -1;
+    step_x = viewport.request_y / scrollease;
+    if (step_x == 0 && viewport.request_y != 0)
+        step_x = viewport.request_y > 0 ? 1 : -1;
     if (step_x > scrollcap)
         step_x = scrollcap;
     if (step_x < -scrollcap)
-        step_x = -scrollcap;
+    step_x = -scrollcap;
+    
+    viewport.origin.x += step;
+    viewport.origin.y += step_x;
 
     wl_list_for_each_safe(w, tmp, &compositor.windows, link) {
 
@@ -77,19 +103,24 @@ viewport_tick(void *data)
         if (!swc_window_get_geometry(w->swc, &geometry))
             continue;
 
-        if (!is_on_screen(&geometry,
-                          compositor.current_screen))
+        if (!is_on_screen(&geometry))
             continue;
 
         swc_window_set_position(w->swc,
-                                geometry.x + step_x,
-                                geometry.y + step);
+                                geometry.x + step,
+                                geometry.y + step_x);
     }
 
-    viewport.pending_y   -= step;
-    viewport.pending_x -= step_x;
+    viewport.request_x   -= step;
+    viewport.request_y -= step_x;
+    
+    if (viewport.request_x != 0 ||
+        viewport.request_y != 0 ||
+        viewport.moving)
+      {
+          viewport_schedule();
+      }
 
-    viewport_schedule();
 
     return 0;
 }
@@ -98,42 +129,39 @@ viewport_tick(void *data)
 bool
 viewport_can_move_horizontally(void)
 {
-    return compositor.current_screen &&
-           compositor.current_screen->swc->geometry.width > 0;
+    return viewport.screen.width > 0;
 }
 
 void
 viewport_set_active(bool active)
 {
-    viewport.active = active;
+    viewport.moving = active;
 }
 
 bool
 viewport_active(void)
 {
-    return viewport.active;
+    return viewport.moving;
 }
 
 void
 viewport_stop(void)
 {
-    viewport.pending_y   = 0;
-    viewport.pending_x = 0;
+    viewport.request_x   = 0;
+    viewport.request_y = 0;
 
-    viewport.active = false;
+    viewport.moving = false;
+    viewport.mode = VIEWPORT_IDLE;
 
-    if (viewport.pan_timer) {
-        wl_event_source_remove(viewport.pan_timer);
-        viewport.pan_timer = NULL;
     }
-}
 
 void
 viewport_push(int32_t dx,
               int32_t dy)
 {
-    viewport.pending_x += dx;
-    viewport.pending_y   += dy;
+    viewport.request_x += dx;
+    viewport.request_y += dy;
+    viewport.moving = true;
 
     viewport_schedule();
 }
@@ -146,31 +174,38 @@ viewport_follow_window(void)
 
     if (!compositor.current_screen)
         return;
+    viewport_update_screen();
 
     int32_t x = input.cursor.x;
     int32_t y = input.cursor.y;
 
-    struct swc_rectangle *screen =
-        &compositor.current_screen->swc->geometry;
+    struct canvas_screen *screen =
+           &viewport.screen;
 
-    viewport.active = false;
+    printf("cursor=(%d,%d)\n",
+       input.cursor.x,
+       input.cursor.y);
+
+    printf("screen=(%d,%d %ux%u)\n",
+       screen->x,
+       screen->y,
+       screen->width,
+       screen->height);
+    fflush(stdout);
 
     if (y < move_scroll_edge_threshold) {
 
-        viewport.active = true;
         viewport_push(0, move_scroll_speed);
 
     }
     else if (y > screen->height - move_scroll_edge_threshold) {
 
-        viewport.active = true;
         viewport_push(0, -move_scroll_speed);
 
     }
 
     if (x < screen->x + move_scroll_edge_threshold) {
 
-        viewport.active = true;
         viewport_push(move_scroll_speed, 0);
 
     }
@@ -179,7 +214,6 @@ viewport_follow_window(void)
              screen->width -
              move_scroll_edge_threshold) {
 
-        viewport.active = true;
         viewport_push(-move_scroll_speed, 0);
 
     }
@@ -189,41 +223,32 @@ viewport_follow_window(void)
 void
 viewport_left(void)
 {
-    viewport.move_by_x = -scrollpx;
-    viewport.move_by_y = 0;
-    viewport.active = true;
+    viewport.mode = VIEWPORT_KEYBOARD;
+    viewport_push(-scrollpx, 0);
 
-    viewport_schedule();}
+}
 
 void
 viewport_right(void)
 {
-    viewport.move_by_x = scrollpx;
-    viewport.move_by_y = 0;
-    viewport.active = true;
-
-    viewport_schedule();
+    viewport.mode = VIEWPORT_KEYBOARD;
+    viewport_push(scrollpx, 0);
 }
 
 
 void
 viewport_top(void)
 {
-    viewport.move_by_x = 0;
-    viewport.move_by_y = -scrollpx;
-    viewport.active = true;
-
-    viewport_schedule();
+    viewport.mode = VIEWPORT_KEYBOARD;
+    viewport_push(0, -scrollpx);
 }
 
 void
 viewport_down(void)
 {
-    viewport.move_by_x = 0;
-    viewport.move_by_y = scrollpx;
-    viewport.active = true;
 
-    viewport_schedule();
+    viewport.mode = VIEWPORT_KEYBOARD;
+    viewport_push(0, scrollpx);
 }
 
 
@@ -235,7 +260,7 @@ viewport_sample_cursor(void *data)
 
     (void)data;
 
-    if (!viewport.active)
+    if (!viewport.moving)
         return 0;
 
     x = input.cursor.x;
@@ -267,8 +292,7 @@ viewport_begin_pan(void)
     viewport.cursor_prev_x = x;
     viewport.cursor_prev_y = y;
 
-    viewport.active = true;
-
+    viewport.mode = VIEWPORT_PAN;
     if (!viewport.pan_timer)
         viewport.pan_timer =
             wl_event_loop_add_timer(compositor.evloop,
@@ -279,3 +303,26 @@ viewport_begin_pan(void)
                                  timerms);
 }
 
+const struct canvas_screen *
+viewport_screen(void)
+{
+    return &viewport.screen;
+}
+
+int32_t
+viewport_origin_x(void)
+{
+    return viewport.origin.x;
+}
+
+int32_t
+viewport_origin_y(void)
+{
+    return viewport.origin.y;
+}
+
+bool
+viewport_is_moving(void)
+{
+    return viewport.moving;
+}

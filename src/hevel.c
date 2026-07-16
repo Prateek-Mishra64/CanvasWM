@@ -4,6 +4,7 @@
 #include "viewport.h"
 #include "window.h"
 #include "spawn.h"
+#include "input.h"
 
 #include <signal.h>
 #include <stdlib.h>
@@ -15,6 +16,7 @@ struct compositor_state compositor = {0};
 struct chord_state chord = {0};
 struct zoom_state zoom = {0};
 struct sel_state sel = {0};
+
 
 /* TODO: clear this up
  * it does this because we modify this value from config
@@ -274,10 +276,10 @@ main(void)
     fprintf(stderr, "cannot initialize swc\n");
     return 1;
   }
-
-
+  
 
   maybe_enable_nein_cursor_theme();
+  input_initialize();
 
 
   /* we can bind mouse buttons using SWC_MOD_ANY */

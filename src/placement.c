@@ -2,6 +2,7 @@
 #include "placement.h"
 #include "spawn.h"
 #include "window.h"
+#include "viewport.h"
 
 /*
  * Every window begins at the origin.
@@ -17,19 +18,20 @@
 #define FULLSCREEN_SPAWN_OFFSET 40
 
 static void
-placement_compute_origin(struct swc_rectangle *origin)
+placement_compute_origin(struct swc_rectangle *candidate)
 {
-    int screen_x = compositor.current_screen->swc->geometry.x;
-    int screen_y = compositor.current_screen->swc->geometry.y;
-    int screen_width = compositor.current_screen->swc->geometry.width;
-    int screen_height = compositor.current_screen->swc->geometry.height;
+    const struct canvas_screen *screen =
+        viewport_screen();
 
-    int center_x = screen_x + screen_width / 2;
-    int center_y = screen_y + screen_height / 2;
+    const struct canvas_origin *origin =
+        viewport_origin();
+
+    int center_x = origin->x + screen->width / 2;
+    int center_y = origin->y + screen->height / 2;
 
     /* Default spawn origin: center of the current viewport. */
-    origin->x = center_x - (int32_t)origin->width / 2;
-    origin->y = center_y - (int32_t)origin->height / 2;
+    candidate->x = center_x - (int32_t)candidate->width / 2;
+    candidate->y = center_y - (int32_t)candidate->height / 2;
 
     /*
      * While a fullscreen window has focus, temporarily relocate the
@@ -49,12 +51,12 @@ placement_compute_origin(struct swc_rectangle *origin)
         struct swc_rectangle geometry;
 
         if (swc_window_get_geometry(compositor.focused, &geometry)) {
-            origin->x =
+            candidate->x =
                 geometry.x +
                 (int32_t)geometry.width +
                 FULLSCREEN_SPAWN_OFFSET;
 
-            origin->y = geometry.y;
+            candidate->y = geometry.y;
         }
     }
 }
@@ -101,9 +103,9 @@ placement_decide(const struct swc_rectangle *candidate,
 void
 placement_compute(void)
 {
-    if (!compositor.current_screen)
+    if (!viewport_screen())
         return;
-
+    
     struct swc_rectangle candidate = spawn.geometry;
 
     placement_compute_origin(&candidate);

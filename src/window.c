@@ -71,7 +71,10 @@ focus_window_reveal(struct swc_window *swc,
 
     focus_window(swc, reason);
 
-    if (!swc || !compositor.current_screen)
+    const struct canvas_screen *screen = viewport_screen();
+    const struct canvas_origin *origin = viewport_origin();
+
+    if (!swc || !screen)
         return;
 
     /* Already in normal view. */
@@ -94,12 +97,12 @@ focus_window_reveal(struct swc_window *swc,
         (int32_t)window_geom.height / 2;
 
     int32_t screen_center_x =
-        compositor.current_screen->swc->geometry.x +
-        (int32_t)compositor.current_screen->swc->geometry.width / 2;
+                origin->x +
+                (int32_t)screen->width / 2;
 
     int32_t screen_center_y =
-        compositor.current_screen->swc->geometry.y +
-        (int32_t)compositor.current_screen->swc->geometry.height / 2;
+                origin->y +
+                (int32_t)screen->height / 2;
 
     viewport_push(screen_center_x - window_center_x,
                   screen_center_y - window_center_y);
@@ -122,28 +125,37 @@ focus_window_reveal(struct swc_window *swc,
 
 
 bool
-is_visible(struct swc_window *w, struct screen *screen)
-{
-  struct swc_rectangle *geom = &screen->swc->geometry;
+is_visible(struct swc_window *w)
+{   
+  const struct canvas_screen *screen =
+                    viewport_screen();
+
+  const struct canvas_origin *origin =
+                    viewport_origin();
+
   struct swc_rectangle wgeom;
   swc_window_get_geometry(w, &wgeom);
 
-  bool h = wgeom.x + (int32_t)wgeom.width > geom->x &&
-           wgeom.x < geom->x + (int32_t)geom->width;
-  bool v = wgeom.y + (int32_t)wgeom.height > geom->y &&
-           wgeom.y < geom->y + (int32_t)geom->height;
+  bool h = wgeom.x + (int32_t)wgeom.width > origin->x &&
+           wgeom.x < origin->x + (int32_t)screen->width;
+  bool v = wgeom.y + (int32_t)wgeom.height > origin->y &&
+           wgeom.y < origin->y + (int32_t)screen->height;
 
   return h && v;
 }
 
 /* hacky sorta, only works for vertical cuz of this */
 bool
-is_on_screen(struct swc_rectangle *window, struct screen *screen)
+is_on_screen(struct swc_rectangle *window)
 {
-  struct swc_rectangle *geom = &screen->swc->geometry;
+  const struct canvas_screen *screen =
+                    viewport_screen();
 
-  return window->x + (int32_t)window->width > geom->x &&
-         window->x < geom->x + (int32_t)geom->width;
+  const struct canvas_origin *origin =
+                    viewport_origin();
+
+  return window->x + (int32_t)window->width > origin->x &&
+         window->x < origin->x + (int32_t)screen->width;
 }
 
 bool
@@ -272,6 +284,8 @@ window_schedule_move(void)
 void
 window_move_begin(void)
 {
+    printf("[MOVE] begin\n");
+    fflush(stdout);
     int32_t x, y;
     struct swc_rectangle geometry;
 
@@ -367,6 +381,12 @@ window_jump(struct swc_window *target)
 int
 window_move_tick(void *data)
 {
+    if (!input.held) {
+    window_end_move();
+    return 0;
+    }
+    printf("[MOVE] tick\n");
+    fflush(stdout);
     int32_t x, y;
     struct swc_rectangle geometry;
 
@@ -379,8 +399,13 @@ window_move_tick(void *data)
     if (!compositor.focused)
         return 0;
 
+    printf("cursor %d %d\n",
+       input.cursor.x,
+       input.cursor.y);
+
     x = input.cursor.x;
     y = input.cursor.y;
+
 
     /* Smooth window movement */
     if (swc_window_get_geometry(compositor.focused, &geometry)) {
@@ -398,6 +423,7 @@ window_move_tick(void *data)
             (int32_t)((target_x - geometry.x) * move_ease_factor);
 
         int32_t new_y =
+
             geometry.y +
             (int32_t)((target_y - geometry.y) * move_ease_factor);
 

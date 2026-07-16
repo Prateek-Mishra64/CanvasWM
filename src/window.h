@@ -11,9 +11,9 @@ struct screen;
 void
 focus_window(struct swc_window *swc, const char *reason);
 bool
-is_visible(struct swc_window *w, struct screen *screen);
+is_visible(struct swc_window *w);
 bool
-is_on_screen(struct swc_rectangle *window, struct screen *screen);
+is_on_screen(struct swc_rectangle *window);
 bool
 is_acme(const struct swc_window *swc);
 

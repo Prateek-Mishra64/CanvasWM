@@ -115,6 +115,10 @@ struct input_state {
 
 extern struct input_state input;
 
+void input_initialize(void);
+
+int
+cursor_tick(void *data);
 
 bool cursor_position(int32_t *x, int32_t *y);
 void
