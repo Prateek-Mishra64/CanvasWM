@@ -20,18 +20,16 @@
 static void
 placement_compute_origin(struct swc_rectangle *candidate)
 {
-    const struct canvas_screen *screen =
-        viewport_screen();
-
     const struct canvas_origin *origin =
         viewport_origin();
 
-    int center_x = origin->x + screen->width / 2;
-    int center_y = origin->y + screen->height / 2;
+    int center_x = origin->x;
+    int center_y = origin->y;
 
     /* Default spawn origin: center of the current viewport. */
-    candidate->x = center_x - (int32_t)candidate->width / 2;
-    candidate->y = center_y - (int32_t)candidate->height / 2;
+    candidate->x = origin->x - (int32_t)candidate->width / 2;
+
+    candidate->y = origin->y - (int32_t)candidate->height / 2;
 
     /*
      * While a fullscreen window has focus, temporarily relocate the

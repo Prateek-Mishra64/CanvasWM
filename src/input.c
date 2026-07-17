@@ -2,6 +2,7 @@
 #include "hevel.h"
 #include "binding.h"
 #include "viewport.h"
+#include "window.h"
 
 
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -24,6 +25,7 @@ current_modifiers(void)
 {
     return swc_get_modifiers();
 }
+
 
 static void
 input_dispatch(enum input_symbol symbol,
@@ -199,6 +201,7 @@ cursor_tick(void *data)
     /* Input owns the cursor state */
     input.cursor.x = x;
     input.cursor.y = y;
+    window_update_focus();
     printf("swc=(%d,%d)\n", x, y);
     printf("input=(%d,%d)\n",
        input.cursor.x,

@@ -8,6 +8,11 @@
 
 struct screen;
 
+
+void
+window_update_focus(void);
+
+
 void
 focus_window(struct swc_window *swc, const char *reason);
 bool

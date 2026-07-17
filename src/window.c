@@ -20,11 +20,45 @@ focused_window(void)
     return NULL;
 }
 
+static bool
+focus_frozen(void)
+{
+    bool frozen =
+        window_is_moving() ||
+        viewport_active() ||
+        swc_get_zoom() != 1.0f;
+
+    printf("move=%d pan=%d zoom=%f\n",
+           window_is_moving(),
+           viewport_active(),
+           swc_get_zoom());
+
+    fflush(stdout);
+
+    return frozen;
+}
+
+void
+window_update_focus(void)
+{
+    if (focus_frozen())
+        return;
+
+    if (swc_window_at(input.cursor.x, input.cursor.y))
+        return;
+
+    if (compositor.focused)
+        focus_window(NULL, "pointer");
+}
+
+
 static void
 windowentered(void *data)
 {
     struct window *w = data;
-    swc_window_set_stacked(w->swc);
+
+    if (focus_frozen())
+        return;
 
     focus_window(w->swc, "pointer");
 }
@@ -97,12 +131,10 @@ focus_window_reveal(struct swc_window *swc,
         (int32_t)window_geom.height / 2;
 
     int32_t screen_center_x =
-                origin->x +
-                (int32_t)screen->width / 2;
+                origin->x;
 
     int32_t screen_center_y =
-                origin->y +
-                (int32_t)screen->height / 2;
+                origin->y;
 
     viewport_push(screen_center_x - window_center_x,
                   screen_center_y - window_center_y);
@@ -136,11 +168,25 @@ is_visible(struct swc_window *w)
   struct swc_rectangle wgeom;
   swc_window_get_geometry(w, &wgeom);
 
-  bool h = wgeom.x + (int32_t)wgeom.width > origin->x &&
-           wgeom.x < origin->x + (int32_t)screen->width;
-  bool v = wgeom.y + (int32_t)wgeom.height > origin->y &&
-           wgeom.y < origin->y + (int32_t)screen->height;
+  int32_t left =
+    origin->x - screen->width / 2;
 
+  int32_t right =
+    origin->x + screen->width / 2;
+
+  int32_t top =
+    origin->y - screen->height / 2;
+
+  int32_t bottom =
+    origin->y + screen->height / 2;
+
+  bool h =
+    wgeom.x + (int32_t)wgeom.width > left &&
+    wgeom.x < right;
+
+  bool v =
+    wgeom.y + (int32_t)wgeom.height > top &&
+    wgeom.y < bottom;
   return h && v;
 }
 
@@ -154,8 +200,15 @@ is_on_screen(struct swc_rectangle *window)
   const struct canvas_origin *origin =
                     viewport_origin();
 
-  return window->x + (int32_t)window->width > origin->x &&
-         window->x < origin->x + (int32_t)screen->width;
+  int32_t left =
+    origin->x - screen->width / 2;
+
+  int32_t right =
+    origin->x + screen->width / 2;
+
+  return window->x + (int32_t)window->width > left &&
+       window->x < right;
+
 }
 
 bool

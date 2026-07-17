@@ -14,7 +14,6 @@ viewport_origin(void)
     return &viewport.origin;
 }
 
-
 static void
 viewport_update_screen(void)
 {
@@ -28,6 +27,12 @@ viewport_update_screen(void)
     viewport.screen.y = g->y;
     viewport.screen.width = g->width;
     viewport.screen.height = g->height;
+
+    viewport.origin.x =
+        viewport.screen.x + viewport.screen.width / 2;
+
+    viewport.origin.y =
+        viewport.screen.y + viewport.screen.height / 2;
 }
 
 static int viewport_tick(void *data);
@@ -61,13 +66,14 @@ viewport_tick(void *data)
     if (!viewport.timer)
         return 0;
 
-    if (!viewport.moving &&
-        viewport.request_x == 0 &&
+    if (viewport.request_x == 0 &&
         viewport.request_y == 0) {
         viewport.moving = false;
+
         viewport_stop();
         return 0;
     }
+    
 
     step = viewport.request_x / scrollease;
     if (step == 0 && viewport.request_x != 0)
@@ -85,9 +91,6 @@ viewport_tick(void *data)
     if (step_x < -scrollcap)
     step_x = -scrollcap;
     
-    viewport.origin.x += step;
-    viewport.origin.y += step_x;
-
     wl_list_for_each_safe(w, tmp, &compositor.windows, link) {
 
         if (!w->swc)
@@ -110,18 +113,19 @@ viewport_tick(void *data)
                                 geometry.x + step,
                                 geometry.y + step_x);
     }
+    
 
     viewport.request_x   -= step;
     viewport.request_y -= step_x;
     
-    if (viewport.request_x != 0 ||
-        viewport.request_y != 0 ||
-        viewport.moving)
+    if (viewport.request_x == 0 ||
+        viewport.request_y == 0)
       {
-          viewport_schedule();
+          viewport_stop();
+          return 0;
       }
 
-
+    viewport_schedule();
     return 0;
 }
 
@@ -140,8 +144,9 @@ viewport_set_active(bool active)
 
 bool
 viewport_active(void)
-{
+{   
     return viewport.moving;
+    
 }
 
 void
@@ -181,17 +186,6 @@ viewport_follow_window(void)
 
     struct canvas_screen *screen =
            &viewport.screen;
-
-    printf("cursor=(%d,%d)\n",
-       input.cursor.x,
-       input.cursor.y);
-
-    printf("screen=(%d,%d %ux%u)\n",
-       screen->x,
-       screen->y,
-       screen->width,
-       screen->height);
-    fflush(stdout);
 
     if (y < move_scroll_edge_threshold) {
 
