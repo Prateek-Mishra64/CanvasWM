@@ -218,7 +218,7 @@ void
 viewport_left(void)
 {
     viewport.mode = VIEWPORT_KEYBOARD;
-    viewport_push(-scrollpx, 0);
+    viewport_push(scrollpx, 0);
 
 }
 
@@ -226,7 +226,7 @@ void
 viewport_right(void)
 {
     viewport.mode = VIEWPORT_KEYBOARD;
-    viewport_push(scrollpx, 0);
+    viewport_push(-scrollpx, 0);
 }
 
 
@@ -234,7 +234,7 @@ void
 viewport_top(void)
 {
     viewport.mode = VIEWPORT_KEYBOARD;
-    viewport_push(0, -scrollpx);
+    viewport_push(0, scrollpx);
 }
 
 void
@@ -242,7 +242,7 @@ viewport_down(void)
 {
 
     viewport.mode = VIEWPORT_KEYBOARD;
-    viewport_push(0, scrollpx);
+    viewport_push(0, -scrollpx);
 }
 
 
@@ -254,9 +254,11 @@ viewport_sample_cursor(void *data)
 
     (void)data;
 
-    if (!viewport.moving)
+    if (!input.held) {
+        viewport.moving = false;
+        viewport.mode = VIEWPORT_IDLE;
         return 0;
-
+    } 
     x = input.cursor.x;
     y = input.cursor.y;
 
@@ -267,7 +269,7 @@ viewport_sample_cursor(void *data)
     viewport.cursor_prev_y = y;
 
     if (dx || dy)
-        viewport_push(-dx, -dy);
+        viewport_push(dx, dy);
 
     wl_event_source_timer_update(viewport.pan_timer,
                                  timerms);

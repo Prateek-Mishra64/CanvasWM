@@ -367,6 +367,8 @@ window_move_begin(void)
 void
 window_resize(void)
 {
+    if (!input.held)
+        swc_window_end_resize(compositor.focused);
 
     if (compositor.focused)
         swc_window_begin_resize(

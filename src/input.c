@@ -96,6 +96,7 @@ button(void *data,
     input.held = held;
 
     uint32_t mods = current_modifiers();
+    
 
     printf("[BUTTON] button=%u state=%u held=%d input.held=%d mods=%u\n",
            button,
@@ -106,7 +107,8 @@ button(void *data,
 
     /*
      * Hybrid mouse actions.
-     */
+     */ 
+    static bool resizing = false;
 
     if (button == BTN_LEFT) {
 
@@ -131,20 +133,26 @@ button(void *data,
 
             if (held)
                 viewport_begin_pan();
-
+            viewport_stop();
             return;
         }
     }
 
     if (button == BTN_RIGHT &&
-        (mods & SWC_MOD_LOGO)) {
+        (mods == SWC_MOD_LOGO)) {
 
         printf("[RESIZE] %s\n",
                held ? "BEGIN" : "RELEASE");
 
-        if (held)
-            window_resize();
-
+        if (held) {
+            resizing = true; 
+            window_resize(); }
+        else if(resizing) {
+            resizing = false;
+            swc_window_end_resize(compositor.focused);
+}
+        
+        swc_pointer_send_button(time, button, state);
         return;
     }
 
