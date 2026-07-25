@@ -78,6 +78,9 @@ axis(void *data,
 
         return;
     }
+    
+    swc_pointer_send_axis(time, axis, value120);
+
 
 }
 

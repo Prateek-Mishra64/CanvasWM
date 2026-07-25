@@ -34,6 +34,9 @@ zoom_in(void)
 {
     zoom.target += zoom_step;
 
+    if (zoom.target > 1.0f)
+        zoom.target = 1.0f;
+
     if (!zoom.timer)
         zoom.timer =
             wl_event_loop_add_timer(compositor.evloop, zoom_tick, NULL);

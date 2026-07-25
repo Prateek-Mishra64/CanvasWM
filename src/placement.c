@@ -45,7 +45,7 @@ placement_compute_origin(struct swc_rectangle *candidate)
         }
     }
 
-    if (focused && focused->fullscreen) {
+    if (focused && focused->fullscreen.enabled) {
         struct swc_rectangle geometry;
 
         if (swc_window_get_geometry(compositor.focused, &geometry)) {
@@ -77,7 +77,7 @@ placement_decide(const struct swc_rectangle *candidate,
          * A focused fullscreen window only establishes the temporary
          * origin. It never becomes the cascade parent.
          */
-        if (w->fullscreen)
+        if (w->fullscreen.enabled)
             continue;
 
         bool fully_hidden =

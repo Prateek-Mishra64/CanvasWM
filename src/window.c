@@ -7,13 +7,36 @@
 
 struct window_move_state move_state;
 
-static struct window *
+static void fullscreen_active(struct window *window,
+                              const struct swc_rectangle *screen);
+
+static void fullscreen_passive(struct window *window);
+
+void fullscreen_update(struct window *window);
+
+struct window *
 focused_window(void)
 {
     struct window *w;
 
     wl_list_for_each(w, &compositor.windows, link) {
         if (w->swc == compositor.focused)
+            return w;
+    }
+
+    return NULL;
+}
+
+static struct window *
+window_from_swc(struct swc_window *swc);
+
+static struct window *
+window_from_swc(struct swc_window *swc)
+{
+    struct window *w;
+
+    wl_list_for_each(w, &compositor.windows, link) {
+        if (w->swc == swc)
             return w;
     }
 
@@ -60,9 +83,16 @@ windowentered(void *data)
     if (focus_frozen())
         return;
 
+    /*
+     * Passive immersion ignores pointer hover.
+     * Clicks still work because they generate focus normally.
+     */
+    if (w->fullscreen.enabled &&
+        !w->fullscreen.snapped)
+        return;
+
     focus_window(w->swc, "pointer");
 }
-
 
 
 void
@@ -90,6 +120,17 @@ focus_window(struct swc_window *swc, const char *reason)
                           outer_border_color_active, outer_border_width);
 
   compositor.focused = swc;
+  struct window *window = window_from_swc(swc);
+
+  if (window &&
+      window->fullscreen.enabled &&
+      !window->fullscreen.snapped) {
+
+      struct swc_rectangle screen =
+        compositor.current_screen->swc->geometry;
+
+      fullscreen_active(window, &screen);
+}
 
   /* center the focused window: both axes in drag mode, vertical only in scroll
    * wheel mode, only when visible or jumping to it, else you can center
@@ -237,10 +278,17 @@ newwindow(struct swc_window *swc)
   struct window *w;
 
   w = malloc(sizeof(*w));
-  if (!w) return;
+  if (!w)
+      return;
+
+  memset(w, 0, sizeof(*w));
   w->swc = swc;
   w->pid = 0;
   w->sticky = false;
+  printf("NEW WINDOW: enabled=%d snapped=%d geometry_saved=%d\n",
+       w->fullscreen.enabled,
+       w->fullscreen.snapped,
+       w->fullscreen.geometry_saved);
 
   wl_list_insert(&compositor.windows, &w->link);
   swc_window_set_handler(swc, &windowhandler, w);
@@ -305,21 +353,127 @@ window_toggle_sticky(void)
     w->sticky = !w->sticky;
 }
 
+static void
+fullscreen_active(struct window *window,
+                  const struct swc_rectangle *screen)
+{
+    if (!window || !screen)
+        return;
+
+    if (window->fullscreen.snapped)
+        return;
+
+    window->fullscreen.snapped = true;
+
+    swc_window_set_geometry(window->swc, screen);
+
+    swc_window_set_fullscreen(
+        window->swc,
+        compositor.current_screen->swc);
+
+    swc_window_focus(window->swc);
+    viewport_update_screen();
+}
+
+
+
+static void
+fullscreen_passive(struct window *window)
+{
+    if (!window)
+        return;
+
+    if (!window->fullscreen.snapped)
+        return;
+
+    window->fullscreen.snapped = false;
+
+    swc_window_set_fullscreen(window->swc, NULL);
+
+    swc_window_set_geometry(
+        window->swc,
+        &window->fullscreen.restore_geometry);
+
+    swc_window_set_stacked(window->swc);
+
+    viewport_update_screen();
+}
+
+
+void
+fullscreen_update(struct window *window)
+{
+    /*
+    * Synchronize the current immersion state with the viewport after a
+    * viewport transition. This keeps Active and Passive immersion states
+    * consistent with viewport interaction and ensures the canvas recognizes
+    * the new interaction rules before the next frame.
+    */
+    if (!window)
+        return;
+
+    if (!window->fullscreen.enabled)
+        return;
+
+    if (!window->fullscreen.snapped)
+        return;
+
+    if (!viewport.moving)
+        return;
+
+    fullscreen_passive(window);
+}
+
 
 void
 window_toggle_fullscreen(void)
 {
-    struct window *w = focused_window();
+    struct window *window = focused_window();
+    struct swc_rectangle screen;
 
-    if (!w)
+    if (!window)
         return;
 
-    w->fullscreen = !w->fullscreen;
+    if (!compositor.current_screen)
+        return;
 
-    swc_window_set_fullscreen(
-        w->swc,
-        compositor.current_screen->swc);
+    screen = compositor.current_screen->swc->geometry;
+
+    /*
+     * Leave immersion.
+     */
+    if (window->fullscreen.enabled) {
+
+        window->fullscreen.enabled = false;
+        window->fullscreen.snapped = false;
+
+        swc_window_set_geometry(
+            window->swc,
+            &window->fullscreen.restore_geometry);
+
+        swc_window_set_stacked(window->swc);
+        viewport_update_screen();
+
+        return;
+    }
+
+    /*
+     * Enter immersion.
+     */
+    if (!window->fullscreen.geometry_saved) {
+
+        swc_window_get_geometry(
+            window->swc,
+            &window->fullscreen.restore_geometry);
+
+        window->fullscreen.geometry_saved = true;
+    }
+
+    window->fullscreen.enabled = true;
+
+    fullscreen_active(window, &screen);
 }
+
 
 static void
 window_schedule_move(void)
@@ -344,6 +498,11 @@ window_move_begin(void)
 
     if (!compositor.focused)
         return;
+    
+    struct window *window = focused_window();
+
+    if (window && window->fullscreen.enabled)
+        return;
 
     x = input.cursor.x;
     y = input.cursor.y;
@@ -367,6 +526,12 @@ window_move_begin(void)
 void
 window_resize(void)
 {
+
+    struct window *window = focused_window();
+
+    if (window && window->fullscreen.enabled)
+        return;
+    
     if (!input.held)
         swc_window_end_resize(compositor.focused);
 

@@ -22,6 +22,9 @@ is_on_screen(struct swc_rectangle *window);
 bool
 is_acme(const struct swc_window *swc);
 
+struct window *
+focused_window(void);
+
 bool 
 window_is_moving(void);
 
@@ -33,10 +36,21 @@ focus_window_reveal(struct swc_window *swc,
                     const char *reason);
 
 void
+fullscreen_update(struct window *window);
+
+void
 window_move_begin(void);
 
 void
 window_end_move(void);
+
+struct canvas_fullscreen {
+    bool enabled;
+    bool snapped;
+
+    bool geometry_saved;
+    struct swc_rectangle restore_geometry;
+};
 
 struct window {
     struct wl_list link;
@@ -46,7 +60,7 @@ struct window {
     pid_t pid;
 
     bool sticky;
-    bool fullscreen;
+    struct canvas_fullscreen fullscreen;
 };
 
 

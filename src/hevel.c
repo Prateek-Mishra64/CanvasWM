@@ -395,6 +395,7 @@ main(void)
 
   fprintf(stderr, "[DEBUG] BEFORE wl_display_run()\n");
   fflush(stderr);
+  viewport_update_screen();
 
   wl_display_run(compositor.display);
 

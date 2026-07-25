@@ -16,6 +16,9 @@ void
 viewport_follow_window(void);
 
 void
+viewport_update_screen(void);
+
+void
 viewport_begin_pan(void);
 void 
 viewport_left(void);

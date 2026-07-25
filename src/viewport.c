@@ -2,6 +2,7 @@
 #include "hevel.h"
 #include "input.h"
 #include "action.h"
+#include "window.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -14,7 +15,7 @@ viewport_origin(void)
     return &viewport.origin;
 }
 
-static void
+void
 viewport_update_screen(void)
 {
     if (!compositor.current_screen)
@@ -106,9 +107,6 @@ viewport_tick(void *data)
         if (!swc_window_get_geometry(w->swc, &geometry))
             continue;
 
-        if (!is_on_screen(&geometry))
-            continue;
-
         swc_window_set_position(w->swc,
                                 geometry.x + step,
                                 geometry.y + step_x);
@@ -157,6 +155,7 @@ viewport_stop(void)
 
     viewport.moving = false;
     viewport.mode = VIEWPORT_IDLE;
+    window_update_focus();
 
     }
 
@@ -167,6 +166,7 @@ viewport_push(int32_t dx,
     viewport.request_x += dx;
     viewport.request_y += dy;
     viewport.moving = true;
+    struct window *window = focused_window();
 
     viewport_schedule();
 }
