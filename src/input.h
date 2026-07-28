@@ -109,8 +109,11 @@ struct input_state {
     enum modifier modifiers;
     enum input_symbol symbol;
     bool held;
+    bool click_pending;
+    bool resizing;
 
     struct cursor_state cursor;
+    struct swc_window *resizing_window;
 };
 
 extern struct input_state input;

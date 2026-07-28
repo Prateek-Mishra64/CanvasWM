@@ -101,26 +101,15 @@ button(void *data,
     uint32_t mods = current_modifiers();
     
 
-    printf("[BUTTON] button=%u state=%u held=%d input.held=%d mods=%u\n",
-           button,
-           state,
-           held,
-           input.held,
-           mods);
-
     /*
      * Hybrid mouse actions.
      */ 
-    static bool resizing = false;
 
     if (button == BTN_LEFT) {
 
         /* Super + Shift + Left Drag -> Window Move */
         if ((mods & (SWC_MOD_LOGO | SWC_MOD_SHIFT))
             == (SWC_MOD_LOGO | SWC_MOD_SHIFT)) {
-
-            printf("[MOVE] %s\n",
-                   held ? "BEGIN" : "RELEASE");
 
             if (held)
                 window_move_begin();
@@ -130,9 +119,6 @@ button(void *data,
 
         /* Super + Left Drag -> Viewport Pan */
         if (mods & SWC_MOD_LOGO) {
-
-            printf("[PAN] %s\n",
-                   held ? "BEGIN" : "RELEASE");
 
             if (held)
                 viewport_begin_pan();
@@ -148,11 +134,17 @@ button(void *data,
                held ? "BEGIN" : "RELEASE");
 
         if (held) {
-            resizing = true; 
-            window_resize(); }
-        else if(resizing) {
-            resizing = false;
-            swc_window_end_resize(compositor.focused);
+            input.resizing = true; 
+            input.resizing_window = compositor.focused;
+            window_resize();
+            printf("BEGIN focused=%p\n", (void *)compositor.focused);
+        }
+        else if(input.resizing) {
+            printf("END focused=%p\n", (void *)compositor.focused);
+            if (input.resizing_window)
+                swc_window_end_resize(input.resizing_window);
+            input.resizing_window = NULL;
+            input.resizing = false;
 }
         
         swc_pointer_send_button(time, button, state);
@@ -187,12 +179,8 @@ button(void *data,
         middle_down ||
         right_down;
 
-    printf("[POINTER] left=%d middle=%d right=%d dragging=%d\n",
-           left_down,
-           middle_down,
-           right_down,
-           dragging);
-
+    if (button == BTN_LEFT && held)
+    input.click_pending = true;
     swc_pointer_send_button(time, button, state);
 }
 
@@ -213,11 +201,6 @@ cursor_tick(void *data)
     input.cursor.x = x;
     input.cursor.y = y;
     window_update_focus();
-    printf("swc=(%d,%d)\n", x, y);
-    printf("input=(%d,%d)\n",
-       input.cursor.x,
-       input.cursor.y);
-
     wl_list_for_each(ns, &compositor.screens, link) {
         struct swc_rectangle *geom = &ns->swc->geometry;
 

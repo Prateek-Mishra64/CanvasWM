@@ -393,32 +393,12 @@ main(void)
   signal(SIGPIPE, debug_signal);
   signal(SIGQUIT, debug_signal);
 
-  fprintf(stderr, "[DEBUG] BEFORE wl_display_run()\n");
-  fflush(stderr);
   viewport_update_screen();
 
   wl_display_run(compositor.display);
 
-  fprintf(stderr, "[DEBUG] AFTER wl_display_run()\n");
-  fflush(stderr);
-
-  fprintf(stderr, "[DEBUG] BEFORE swc_finalize()\n");
-  fflush(stderr);
-
   swc_finalize();
-  fprintf(stderr, "[DEBUG] AFTER swc_finalize()\n");
-  fflush(stderr);
-
-  fprintf(stderr, "[DEBUG] BEFORE wl_display_destroy()\n");
-  fflush(stderr);
-
   wl_display_destroy(compositor.display);
-
-  fprintf(stderr, "[DEBUG] AFTER wl_display_destroy()\n");
-  fflush(stderr);
-
-  fprintf(stderr, "[DEBUG] RETURNING FROM MAIN\n");
-  fflush(stderr);
 
   return 0;
 

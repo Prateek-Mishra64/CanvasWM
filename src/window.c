@@ -14,6 +14,8 @@ static void fullscreen_passive(struct window *window);
 
 void fullscreen_update(struct window *window);
 
+struct window *active_immersed_window(void);
+
 struct window *
 focused_window(void)
 {
@@ -51,13 +53,6 @@ focus_frozen(void)
         viewport_active() ||
         swc_get_zoom() != 1.0f;
 
-    printf("move=%d pan=%d zoom=%f\n",
-           window_is_moving(),
-           viewport_active(),
-           swc_get_zoom());
-
-    fflush(stdout);
-
     return frozen;
 }
 
@@ -67,13 +62,42 @@ window_update_focus(void)
     if (focus_frozen())
         return;
 
-    if (swc_window_at(input.cursor.x, input.cursor.y))
+    struct swc_window *swc =
+        swc_window_at(input.cursor.x, input.cursor.y);
+
+    /*
+     * Click activates Passive immersion.
+     */
+    if (input.click_pending) {
+
+        input.click_pending = false;
+
+        struct window *window = window_from_swc(swc);
+
+        if (window &&
+            window->fullscreen.enabled &&
+            !window->fullscreen.snapped) {
+
+            struct swc_rectangle screen =
+                compositor.current_screen->swc->geometry;
+
+            fullscreen_active(window, &screen);
+            return;
+        }
+    }
+
+    /*
+     * Pointer over empty canvas.
+     */
+    if (!swc) {
+        if (active_immersed_window())
+          return;
+        if (compositor.focused)
+            focus_window(NULL, "emptyCanvas");
         return;
+    }
 
-    if (compositor.focused)
-        focus_window(NULL, "pointer");
 }
-
 
 static void
 windowentered(void *data)
@@ -86,18 +110,20 @@ windowentered(void *data)
     /*
      * Passive immersion ignores pointer hover.
      * Clicks still work because they generate focus normally.
+     *
      */
-    if (w->fullscreen.enabled &&
-        !w->fullscreen.snapped)
+    if (w->fullscreen.enabled)
         return;
 
-    focus_window(w->swc, "pointer");
+    focus_window(w->swc, "windowEntered");
 }
 
 
 void
 focus_window(struct swc_window *swc, const char *reason)
 {
+  printf("FOCUS REASON: %s\n", reason);
+  
   const char *from = compositor.focused && compositor.focused->title
                          ? compositor.focused->title
                          : "";
@@ -120,23 +146,23 @@ focus_window(struct swc_window *swc, const char *reason)
                           outer_border_color_active, outer_border_width);
 
   compositor.focused = swc;
-  struct window *window = window_from_swc(swc);
-
-  if (window &&
-      window->fullscreen.enabled &&
-      !window->fullscreen.snapped) {
-
-      struct swc_rectangle screen =
-        compositor.current_screen->swc->geometry;
-
-      fullscreen_active(window, &screen);
 }
 
-  /* center the focused window: both axes in drag mode, vertical only in scroll
-   * wheel mode, only when visible or jumping to it, else you can center
-   * offscreen windows */
+struct window *
+active_immersed_window(void)
+{
+    struct window *w;
 
+    wl_list_for_each(w, &compositor.windows, link) {
+        if (w->fullscreen.enabled &&
+            w->fullscreen.snapped)
+            return w;
+    }
+
+    return NULL;
 }
+
+
 
 void
 focus_window_reveal(struct swc_window *swc,
@@ -264,6 +290,11 @@ windowdestroy(void *data)
   struct window *w = data;
   if (compositor.focused == w->swc) focus_window(NULL, "destroy");
   wl_list_remove(&w->link);
+ 
+  if (w->fullscreen.enabled) {
+    w->fullscreen.enabled = false;
+    w->fullscreen.snapped = false;
+  }
   free(w);
 }
 
@@ -301,10 +332,13 @@ newwindow(struct swc_window *swc)
       swc_window_set_geometry(swc, &spawn.geometry);
       spawn.pending = false;
     }
+  if (w) {
 
+  }
   swc_window_show(swc);
   printf("window '%s'\n", swc->title ? swc->title : "");
-  focus_window(swc, "new_window");
+  if (!active_immersed_window())
+      focus_window(swc, "new_window");
 }
 
 void
@@ -362,7 +396,13 @@ fullscreen_active(struct window *window,
 
     if (window->fullscreen.snapped)
         return;
+    struct window *w;
 
+    wl_list_for_each(w, &compositor.windows, link) {
+        w->fullscreen.snapped = false;
+    }
+    
+    window->fullscreen.enabled = true;
     window->fullscreen.snapped = true;
 
     swc_window_set_geometry(window->swc, screen);
@@ -371,7 +411,7 @@ fullscreen_active(struct window *window,
         window->swc,
         compositor.current_screen->swc);
 
-    swc_window_focus(window->swc);
+    focus_window(window->swc, "fullscreen_active");    
     viewport_update_screen();
 }
 
@@ -389,10 +429,6 @@ fullscreen_passive(struct window *window)
     window->fullscreen.snapped = false;
 
     swc_window_set_fullscreen(window->swc, NULL);
-
-    swc_window_set_geometry(
-        window->swc,
-        &window->fullscreen.restore_geometry);
 
     swc_window_set_stacked(window->swc);
 
@@ -418,10 +454,8 @@ fullscreen_update(struct window *window)
     if (!window->fullscreen.snapped)
         return;
 
-    if (!viewport.moving)
-        return;
-
     fullscreen_passive(window);
+    focus_window(NULL, "immersionUpdate");
 }
 
 
@@ -446,6 +480,8 @@ window_toggle_fullscreen(void)
 
         window->fullscreen.enabled = false;
         window->fullscreen.snapped = false;
+        window->fullscreen.geometry_saved = false;
+        swc_window_set_fullscreen(window->swc, NULL);
 
         swc_window_set_geometry(
             window->swc,
@@ -501,7 +537,7 @@ window_move_begin(void)
     
     struct window *window = focused_window();
 
-    if (window && window->fullscreen.enabled)
+    if (window && window->fullscreen.enabled && window->fullscreen.snapped)
         return;
 
     x = input.cursor.x;
@@ -532,9 +568,6 @@ window_resize(void)
     if (window && window->fullscreen.enabled)
         return;
     
-    if (!input.held)
-        swc_window_end_resize(compositor.focused);
-
     if (compositor.focused)
         swc_window_begin_resize(
             compositor.focused,
@@ -605,8 +638,6 @@ window_move_tick(void *data)
     window_end_move();
     return 0;
     }
-    printf("[MOVE] tick\n");
-    fflush(stdout);
     int32_t x, y;
     struct swc_rectangle geometry;
 
@@ -618,10 +649,6 @@ window_move_tick(void *data)
 
     if (!compositor.focused)
         return 0;
-
-    printf("cursor %d %d\n",
-       input.cursor.x,
-       input.cursor.y);
 
     x = input.cursor.x;
     y = input.cursor.y;

@@ -69,7 +69,7 @@ viewport_tick(void *data)
 
     if (viewport.request_x == 0 &&
         viewport.request_y == 0) {
-        viewport.moving = false;
+        viewport_set_active(false);
 
         viewport_stop();
         return 0;
@@ -137,8 +137,17 @@ viewport_can_move_horizontally(void)
 void
 viewport_set_active(bool active)
 {
+    if (active && !viewport.moving) {
+
+        struct window *window = active_immersed_window();
+
+        if (window)
+            fullscreen_update(window);
+    }
+
     viewport.moving = active;
 }
+
 
 bool
 viewport_active(void)
@@ -153,7 +162,7 @@ viewport_stop(void)
     viewport.request_x   = 0;
     viewport.request_y = 0;
 
-    viewport.moving = false;
+    viewport_set_active(false);
     viewport.mode = VIEWPORT_IDLE;
     window_update_focus();
 
@@ -165,7 +174,7 @@ viewport_push(int32_t dx,
 {
     viewport.request_x += dx;
     viewport.request_y += dy;
-    viewport.moving = true;
+    viewport_set_active(true);
     struct window *window = focused_window();
 
     viewport_schedule();
@@ -255,7 +264,7 @@ viewport_sample_cursor(void *data)
     (void)data;
 
     if (!input.held) {
-        viewport.moving = false;
+        viewport_set_active(false);
         viewport.mode = VIEWPORT_IDLE;
         return 0;
     } 

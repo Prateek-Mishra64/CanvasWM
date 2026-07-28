@@ -45,7 +45,7 @@ placement_compute_origin(struct swc_rectangle *candidate)
         }
     }
 
-    if (focused && focused->fullscreen.enabled) {
+    if (focused && focused->fullscreen.enabled && focused->fullscreen.snapped) {
         struct swc_rectangle geometry;
 
         if (swc_window_get_geometry(compositor.focused, &geometry)) {

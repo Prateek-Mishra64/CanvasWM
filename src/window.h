@@ -25,6 +25,8 @@ is_acme(const struct swc_window *swc);
 struct window *
 focused_window(void);
 
+struct window *active_immersed_window(void);
+
 bool 
 window_is_moving(void);
 
