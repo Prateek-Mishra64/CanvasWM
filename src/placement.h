@@ -7,7 +7,7 @@ enum placement_policy {
 };
 
 void
-placement_compute(void);
+placement_compute(struct swc_rectangle *geometry);
 
 
 #endif

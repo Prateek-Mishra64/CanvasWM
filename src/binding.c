@@ -34,7 +34,7 @@ binding_resolver(void)
 
         case BIND_EXEC:
             if (!input.held)
-                spawn_launch(binding->command, 1000, 800);
+                spawn_launch(binding->command);
             break;
         }
 

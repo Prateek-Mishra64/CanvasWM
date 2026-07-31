@@ -6,70 +6,24 @@
 struct spawn_request spawn = {0};
 
 void
-spawn_launch(const char *command,
-             int width,
-             int height);
+spawn_launch(const char *command);
 
 void
-spawn_request_prepare(const char *command,
-    int width,
-    int height);
-
-void
-spawn_execute(void);
-
-void
-spawn_request_prepare(const char *command, int width, int height)
+spawn_launch(const char *command)
 {
-  memset(&spawn.geometry, 0, sizeof(spawn.geometry));
-  
-  snprintf(spawn.command, 
-      sizeof(spawn.command), 
-      "%s",
-      command);
-  
-  spawn.argv[0] = spawn.command;
-  spawn.argv[1] = NULL;
-  spawn.geometry.width = width;
-  spawn.geometry.height = height;
-  spawn.pending = true;
-
-}
-
-void
-spawn_execute(void)
-{
-    if (!spawn.pending)
-        return;
-
-    placement_compute();
-
     pid_t pid = fork();
 
-    printf("fork returned %d\n", pid);
-
-    if (pid > 0) {
-        spawn.pid = pid;
-        return;
-    }
-
     if (pid == 0) {
-        execvp(spawn.argv[0], spawn.argv);
+        execl("/bin/sh",
+              "sh",
+              "-c",
+              command,
+              (char *)NULL);
 
-        perror("execvp");
+        perror("execl");
         _exit(127);
     }
 
-    perror("fork");
-}
-
-void
-spawn_launch(const char *command,
-             int width,
-             int height)
-{
-    printf("[spawn_launch] %s\n", command);
-    fflush(stdout);
-    spawn_request_prepare(command, width, height);
-    spawn_execute();
+    if (pid < 0)
+        perror("fork");
 }

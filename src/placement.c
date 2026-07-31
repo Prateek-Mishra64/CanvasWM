@@ -1,6 +1,5 @@
 #include "hevel.h"
 #include "placement.h"
-#include "spawn.h"
 #include "window.h"
 #include "viewport.h"
 
@@ -99,12 +98,12 @@ placement_decide(const struct swc_rectangle *candidate,
 }
 
 void
-placement_compute(void)
+placement_compute(struct swc_rectangle *geometry)
 {
     if (!viewport_screen())
         return;
     
-    struct swc_rectangle candidate = spawn.geometry;
+    struct swc_rectangle candidate = *geometry;
 
     placement_compute_origin(&candidate);
 
@@ -127,5 +126,5 @@ placement_compute(void)
 }
 
 
-    spawn.geometry = candidate;
+    *geometry = candidate;
 }

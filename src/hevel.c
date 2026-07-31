@@ -91,7 +91,7 @@ bind_quit(void *data, uint32_t time, uint32_t value, uint32_t state)
 }
 
 static void
-bind_spawn(void *data, uint32_t time, uint32_t value, uint32_t state)
+spawn_terminal(void *data, uint32_t time, uint32_t value, uint32_t state)
 {
     (void)data;
     (void)time;
@@ -99,7 +99,44 @@ bind_spawn(void *data, uint32_t time, uint32_t value, uint32_t state)
 
     REQUIRE_PRESS();
 
-    spawn_launch("kitty", 1000, 800);
+    spawn_launch("kitty");
+}
+
+static void
+spawn_file_browser(void *data, uint32_t time, uint32_t value, uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    REQUIRE_PRESS();
+
+    spawn_launch("nautilus --new-window");
+}
+
+
+static void
+spawn_browser(void *data, uint32_t time, uint32_t value, uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    REQUIRE_PRESS();
+
+    spawn_launch("librewolf --new-window");
+}
+
+static void
+spawn_launcher(void *data, uint32_t time, uint32_t value, uint32_t state)
+{
+    (void)data;
+    (void)time;
+    (void)value;
+
+    REQUIRE_PRESS();
+
+    spawn_launch("rofi -show drun");
 }
 
 static void
@@ -296,8 +333,31 @@ main(void)
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_t,
-    bind_spawn,
+    spawn_terminal,
     NULL);
+
+
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO,
+    XKB_KEY_f,
+    spawn_browser,
+    NULL);
+
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO,
+    XKB_KEY_g,
+    spawn_file_browser,
+    NULL);
+
+  swc_add_binding(
+    SWC_BINDING_KEY,
+    SWC_MOD_LOGO,
+    XKB_KEY_space,
+    spawn_launcher,
+    NULL);
+
 
 /* Viewport navigation */
   swc_add_binding(
@@ -332,7 +392,7 @@ main(void)
   swc_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
-    XKB_KEY_f,
+    XKB_KEY_period,
     bind_window_fullscreen,
     NULL);
 

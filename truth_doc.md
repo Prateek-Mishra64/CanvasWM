@@ -282,7 +282,6 @@ Rich spawn requests
 Future launcher and IPC integration
 
 
-
-
+struct canvas_window *next;
 
 

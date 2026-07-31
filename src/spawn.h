@@ -17,19 +17,7 @@ struct spawn_request {
 
 
 void
-spawn_request_prepare(const char *command,
-    int width,
-    int height
-    );
-
-
-void
-spawn_execute(void);
-
-void
-spawn_launch(const char *command,
-             int width,
-             int height);
+spawn_launch(const char *command);
 
 
 extern struct spawn_request spawn;

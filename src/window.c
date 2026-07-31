@@ -3,6 +3,7 @@
 #include "input.h"
 #include "zoom.h"
 #include "spawn.h"
+#include "placement.h"
 #include "viewport.h"
 
 struct window_move_state move_state;
@@ -327,11 +328,16 @@ newwindow(struct swc_window *swc)
   swc_window_set_border(swc, inner_border_color_inactive, inner_border_width,
                         outer_border_color_inactive, outer_border_width);
   w->pid = swc_window_get_pid(swc);
+
+  struct swc_rectangle default_geometry;
+
+  default_geometry.width = 1000;
+  default_geometry.height = 800;
+
   
-  if (spawn.pending && w->pid == spawn.pid) {
-      swc_window_set_geometry(swc, &spawn.geometry);
-      spawn.pending = false;
-    }
+  placement_compute(&default_geometry); 
+  swc_window_set_geometry(swc, &default_geometry);
+  
   if (w) {
 
   }

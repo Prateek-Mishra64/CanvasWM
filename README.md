@@ -1,148 +1,287 @@
-CanvasWm 
------
+# Canvas
 
-"Make the user interface invisible"
+> A spatial desktop built on an infinite world.
 
-CanvasWm is a custom fork or spinoff of Hevel a scrollable, floating window manager for Wayland that uses mouse
-chords for all commands.
+Canvas is an experimental Wayland desktop environment that replaces the traditional workspace model with a continuous, infinite canvas.
 
-Its design is inspired by ideas from Rob Pike's 1988 paper, "Window Systems 
-Should be Transparent", taken to their logical extremes. In this sense, hevel
-is a modernization of mouse-driven Unix and Plan 9 window systems such as mux,
-8½, and rio.
+Instead of switching between workspaces, desktops, or virtual screens, every application exists somewhere in a single shared world that can be navigated freely.
 
-CanvasWM treats the canvas origin as a high-speed cache. New windows appear there by default because that's where the user's attention already is. When the origin is occupied, new windows cascade predictably from the occupying window rather than replacing it. Long-lived windows are expected to be moved by the user into their own locations on the infinite canvas.
+The viewport moves.
 
-Canvas is not a desktop you move through. Canvas is a desktop that moves around you.
+Windows stay where they are.
 
-Unlike those systems, hevel has no menus and is not limited to a single
-screen of space. Instead, the desktop is an infinite plane:
-windows can be created anywhere, and the view can be freely scrolled thru (vertically, or in all axis).
+---
 
-hevel is implemented using the [neuswc](https://git.sr.ht/~shrub900/neuswc) library.
+## Philosophy
 
-hevel is the flagship window manager designed for use with 
-[dérive linux](https://derivelinux.org).
+Modern desktop environments are built around temporary layouts.
 
-**WARNING**: This is experimental software. Use at your own risk.
+Applications are tiled, floated, stacked, or assigned to numbered workspaces. As the number of running applications grows, users spend more time managing layouts than interacting with information.
 
-Commands 
---------
+Canvas approaches desktop interaction differently.
 
-Commands are issued using mouse chords: combinations of mouse buttons pressed 
-in sequence.
+The desktop is treated as a persistent spatial environment rather than a collection of pages.
 
-Mouse buttons are referred to as follows:
-- 1: left click
-- 2: middle click (scroll wheel)
-- 3: right click.
+Applications have locations.
 
-Here are the commands:
+Locations have meaning.
 
-- 1 → 3 → drag → release
+Memory becomes spatial instead of symbolic.
 
-  Create a new terminal in the dragged rectangle.
-  
-- 3 → 1 → move mouse over target window → release
+Rather than remembering:
 
-  Kill the target window.
-   
-- 3 → 2 → release 2, keep holding the scroll wheel
+> "Firefox is on workspace 3."
 
-  Scroll vertically in vertical mode, and drag the cursor in drag mode.
+you remember:
 
-- 2 → 3 → release 2 over a window, and then drag with 3
+> "Firefox is north-east of my terminal."
 
-  Resize the window.
+Just as people naturally remember where objects are placed on a physical desk, Canvas allows applications to become part of a persistent mental map.
 
-- 2 → 1 → release 2 over a window, then drag with 1
+---
 
-  Move the window. Dragging to the top or bottom of the screen begins 
-  scrolling.
+# Core Principles
 
-- 1 → 2
+## Infinite World
 
-  User-configurable (see config.h).
+Canvas has no workspaces.
 
-Building
------ 
+There is only one world.
 
-To build hevel, you will need the [neuwld](https://git.sr.ht/~shrub900/neuwld) and [neuswc](https://git.sr.ht/~shrub900/neuswc)
-library installed. Hevel requires the following development dependencies:
+The viewport moves through that world while windows remain fixed.
 
-- A C99-compatible compiler
-- some sort of make
-- pkg-config
-- wayland-scanner, wayland-server, wayland-client
-- wayland-server, wayland-client
-- libinput, libdrm, pixman, xkbcommon
-- [neuwld](https://git.sr.ht/~shrub900/neuwld)
-- [neuswc](https://git.sr.ht/~shrub900/neuswc)
+Applications are never "sent" to another workspace because no such concept exists.
+
+---
+
+## Spatial Memory
+
+Canvas is designed around human spatial memory.
+
+Every application occupies a physical location.
+
+Instead of switching contexts, users navigate space.
+
+---
+
+## Viewport Navigation
+
+The camera is the primary object that moves.
+
+The world itself remains static.
+
+Navigation is intended to feel closer to moving around a map than changing desktops.
+
+---
+
+## Windows Are Objects
+
+Windows are not layout elements.
+
+They are independent objects existing within the world.
+
+Canvas intentionally avoids enforcing tiling or floating paradigms.
+
+The user decides where objects belong.
+
+---
+
+## Minimal Compositor
+
+Canvas is **not** another compositor implementation.
+
+The compositor is considered infrastructure.
+
+Its responsibility is simply to provide:
+
+- window creation
+- input
+- rendering
+- outputs
+- protocol support
+
+Everything else belongs to Canvas.
+
+---
+
+## Backend Agnostic
+
+Canvas should not depend on a specific compositor implementation.
+
+The compositor exists only to expose a small platform interface.
+
+Any backend capable of providing:
+
+- windows
+- rendering
+- input
+- outputs
+
+should be capable of running Canvas.
+
+---
+
+# Goals
+
+- Infinite desktop
+- Spatial interaction
+- Persistent layouts
+- Low latency
+- Smooth viewport navigation
+- Minimal compositor logic
+- Clear separation between backend and desktop logic
+
+---
+
+# Non Goals
+
+Canvas is **not** trying to become:
+
+- another tiling window manager
+- another floating window manager
+- another desktop shell
+- another compositor project
+
+The focus is the spatial desktop experience.
+
+---
+
+# Architecture
 
 ```
-make
-make install 
+                Applications
+                      │
+                      ▼
+              Wayland Backend
+                      │
+      ┌───────────────┴───────────────┐
+      │                               │
+      │        Platform Interface      │
+      │                               │
+      └───────────────┬───────────────┘
+                      │
+                      ▼
+                   Canvas
+      ┌────────────────────────────────┐
+      │ Infinite World                 │
+      │ Viewport                       │
+      │ Spatial Navigation             │
+      │ Selection                      │
+      │ Window Placement               │
+      │ Interaction Model              │
+      └────────────────────────────────┘
 ```
 
-To run:
+Canvas owns the world.
 
-```
-swc-launch hevel
-```
-Linux is the primary supported platform. NetBSD and FreeBSD also work, but may
-require minor Makefile adjustments. Depending on your setup, you may want to 
-tweak neuswc itself via config.mk before compiling hevel.
+The backend owns the Wayland implementation.
 
-hevel-specific configuration is done at compile time via config.h.
-j
+---
 
+# Why Another Desktop?
 
+Because existing desktop environments optimize for window management.
 
-In file included from src/hevel.c:2:
-src/binding.h:10:3: error: expected specifier-qualifier-list before ‘BIND_ACTION’
-   10 |   BIND_ACTION,
-      |   ^~~~~~~~~~~
-src/binding.h:16:5: error: unknown type name ‘xkb_keysym_t’
-   16 |     xkb_keysym_t key;
-      |     ^~~~~~~~~~~~
-src/binding.h:18:10: error: ‘binding_type’ defined as wrong kind of tag
-   18 |     enum binding_type type;
-      |          ^~~~~~~~~~~~
-src/binding.h:18:23: error: field ‘type’ has incomplete type
-   18 |     enum binding_type type;
-      |                       ^~~~
-src/hevel.c: In function ‘main’:
-src/hevel.c:107:3: error: implicit declaration of function ‘binding_intialize’; did you mean ‘binding_initialize’? [-Wimplicit-function-declaration]
-  107 |   binding_intialize();
-      |   ^~~~~~~~~~~~~~~~~
-      |   binding_initialize
-In file included from src/binding.c:3:
-src/binding.h:10:3: error: expected specifier-qualifier-list before ‘BIND_ACTION’
-   10 |   BIND_ACTION,
-      |   ^~~~~~~~~~~
-src/binding.h:16:5: error: unknown type name ‘xkb_keysym_t’
-   16 |     xkb_keysym_t key;
-      |     ^~~~~~~~~~~~
-src/binding.h:18:10: error: ‘binding_type’ defined as wrong kind of tag
-   18 |     enum binding_type type;
-      |          ^~~~~~~~~~~~
-src/binding.h:18:23: error: field ‘type’ has incomplete type
-   18 |     enum binding_type type;
-      |                       ^~~~
-src/binding.c: In function ‘binding_action’:
-src/binding.c:25:12: error: ‘BIND_ACTION’ undeclared (first use in this function)
-   25 |       case BIND_ACTION:
-      |            ^~~~~~~~~~~
-src/binding.c:25:12: note: each undeclared identifier is reported only once for each function it appears in
-src/binding.c:28:12: error: ‘BIND_EXEC’ undeclared (first use in this function)
-   28 |       case BIND_EXEC:
-      |            ^~~~~~~~~
-src/binding.c: In function ‘binding_initialize’:
-src/binding.c:39:21: error: implicit declaration of function ‘LENGTH’ [-Wimplicit-function-declaration]
-   39 |     for (i = 0; i < LENGTH(bindings); ++i) {
-      |                     ^~~~~~
-src/binding.c:39:28: error: ‘bindings’ undeclared (first use in this function); did you mean ‘binding’?
-   39 |     for (i = 0; i < LENGTH(bindings); ++i) {
-      |                            ^~~~~~~~
-      |                            binding
-make: *** [Makefile:21: hevel] Error 1
+Canvas optimizes for information management.
+
+The objective is to reduce context switching by allowing users to build long-term spatial memory.
+
+---
+
+# Current Status
+
+Canvas is currently experimental.
+
+Development is focused on creating a stable foundation before introducing additional features.
+
+Current priorities include:
+
+- rendering pipeline
+- focus system
+- popup handling
+- output management
+- application startup
+- viewport interaction
+
+---
+
+# Roadmap
+
+## Phase 1
+
+- Stable rendering
+- Reliable focus
+- Popup support
+- Output management
+- Playtest-ready desktop
+
+## Phase 2
+
+- Spatial search
+- Persistent sessions
+- Better viewport controls
+- Multi-monitor support
+
+## Phase 3
+
+- Plugins
+- Advanced gestures
+- Spatial workflows
+- Collaborative features
+
+---
+
+# Inspiration
+
+Canvas draws inspiration from several systems and ideas rather than attempting to imitate any single project.
+
+### User Interfaces
+
+- Xerox Alto
+- Smalltalk
+- Andrew Window System
+- Macintosh Finder (spatial navigation)
+- Plan 9 (simplicity)
+- Infinite whiteboards
+
+### Window Managers
+
+- Hyprland
+- sway
+- river
+- dwm
+- Hevel
+
+### Research
+
+- Spatial memory in HCI
+- Zoomable User Interfaces (ZUIs)
+- Information visualization
+- Infinite canvas interfaces
+
+---
+
+# Design Values
+
+Every feature should satisfy at least one of these principles.
+
+- Simplicity
+- Spatial consistency
+- Predictability
+- Performance
+- Low latency
+- Minimal abstraction leakage
+
+If a feature increases complexity without improving the spatial workflow, it probably does not belong in Canvas.
+
+---
+
+# License
+
+(TBD)
+
+---
+
+> The desktop shouldn't be a stack of workspaces.
+>
+> It should be a place.
