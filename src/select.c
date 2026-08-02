@@ -1,9 +1,10 @@
 #include "select.h"
-#include "hevel.h"
+#include "canvas.h"
 #include "input.h"
 #include "spawn.h"
 #include "window.h"
 #include "../config.h"
+#include "host.h"
 
 int
 select_tick(void *data)
@@ -16,7 +17,7 @@ select_tick(void *data)
   if (cursor_position(&x, &y)) {
     sel.cur_x = x;
     sel.cur_y = y;
-    swc_overlay_set_box(sel.start_x, sel.start_y, x, y, select_box_color,
+    host_overlay_set_box(sel.start_x, sel.start_y, x, y, select_box_color,
                         select_box_border);
   }
 

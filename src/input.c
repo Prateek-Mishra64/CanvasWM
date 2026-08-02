@@ -1,8 +1,9 @@
 #include "input.h"
-#include "hevel.h"
+#include "canvas.h"
 #include "binding.h"
 #include "viewport.h"
 #include "window.h"
+#include "host.h"
 
 
 #include <xkbcommon/xkbcommon-keysyms.h>
@@ -23,7 +24,7 @@ struct input_state input;
 static inline uint32_t
 current_modifiers(void)
 {
-    return swc_get_modifiers();
+    return host_get_modifiers();
 }
 
 
@@ -79,7 +80,7 @@ axis(void *data,
         return;
     }
     
-    swc_pointer_send_axis(time, axis, value120);
+    host_pointer_send_axis(time, axis, value120);
 
 
 }
@@ -142,12 +143,12 @@ button(void *data,
         else if(input.resizing) {
             printf("END focused=%p\n", (void *)compositor.focused);
             if (input.resizing_window)
-                swc_window_end_resize(input.resizing_window);
+                host_window_end_resize(input.resizing_window);
             input.resizing_window = NULL;
             input.resizing = false;
 }
         
-        swc_pointer_send_button(time, button, state);
+        host_pointer_send_button(time, button, state);
         return;
     }
 
@@ -170,7 +171,7 @@ button(void *data,
         break;
 
     default:
-        swc_pointer_send_button(time, button, state);
+        host_pointer_send_button(time, button, state);
         return;
     }
 
@@ -181,7 +182,7 @@ button(void *data,
 
     if (button == BTN_LEFT && held)
     input.click_pending = true;
-    swc_pointer_send_button(time, button, state);
+    host_pointer_send_button(time, button, state);
 }
 
 int
@@ -223,7 +224,7 @@ cursor_position_raw(int32_t *x, int32_t *y)
 {
   int32_t fx, fy;
 
-  if (!swc_cursor_position(&fx, &fy)) return false;
+  if (!host_cursor_position(&fx, &fy)) return false;
   *x = fx >> 8;
   *y = fy >> 8;
   return true;
@@ -235,7 +236,7 @@ cursor_position(int32_t *x, int32_t *y)
   if (!cursor_position_raw(x, y)) return false;
 
   if (enable_zoom) {
-    float zoom = swc_get_zoom();
+    float zoom = host_get_zoom();
     if (zoom != 1.0f && compositor.current_screen) {
       int32_t cx = compositor.current_screen->swc->geometry.x +
                    compositor.current_screen->swc->geometry.width / 2;

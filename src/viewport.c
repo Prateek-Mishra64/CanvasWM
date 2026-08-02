@@ -1,8 +1,9 @@
 #include "viewport.h"
-#include "hevel.h"
+#include "canvas.h"
 #include "input.h"
 #include "action.h"
 #include "window.h"
+#include "host.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -107,7 +108,7 @@ viewport_tick(void *data)
         if (!swc_window_get_geometry(w->swc, &geometry))
             continue;
 
-        swc_window_set_position(w->swc,
+        host_window_set_position(w->swc,
                                 geometry.x + step,
                                 geometry.y + step_x);
     }

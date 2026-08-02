@@ -1,10 +1,11 @@
 #include "window.h"
-#include "hevel.h"
+#include "canvas.h"
 #include "input.h"
 #include "zoom.h"
 #include "spawn.h"
 #include "placement.h"
 #include "viewport.h"
+#include "host.h"
 
 struct window_move_state move_state;
 
@@ -52,7 +53,7 @@ focus_frozen(void)
     bool frozen =
         window_is_moving() ||
         viewport_active() ||
-        swc_get_zoom() != 1.0f;
+        host_get_zoom() != 1.0f;
 
     return frozen;
 }
@@ -64,7 +65,7 @@ window_update_focus(void)
         return;
 
     struct swc_window *swc =
-        swc_window_at(input.cursor.x, input.cursor.y);
+        host_window_at(input.cursor.x, input.cursor.y);
 
     /*
      * Click activates Passive immersion.
@@ -135,15 +136,15 @@ focus_window(struct swc_window *swc, const char *reason)
          from, (void *)swc, to, reason);
 
   if (compositor.focused)
-    swc_window_set_border(compositor.focused, inner_border_color_inactive,
+    host_window_set_border(compositor.focused, inner_border_color_inactive,
                           inner_border_width, outer_border_color_inactive,
                           outer_border_width);
 
-  swc_window_focus(swc);
+  host_window_focus(swc);
 
  
   if (swc)
-    swc_window_set_border(swc, inner_border_color_active, inner_border_width,
+    host_window_set_border(swc, inner_border_color_active, inner_border_width,
                           outer_border_color_active, outer_border_width);
 
   compositor.focused = swc;
@@ -180,10 +181,10 @@ focus_window_reveal(struct swc_window *swc,
         return;
 
     /* Already in normal view. */
-    if (swc_get_zoom() >= 1.0f)
+    if (host_get_zoom() >= 1.0f)
         return;
 
-    if (!swc_window_get_geometry(swc, &window_geom))
+    if (!host_window_get_geometry(swc, &window_geom))
         return;
 
     if (window_geom.width == 0 ||
@@ -234,7 +235,7 @@ is_visible(struct swc_window *w)
                     viewport_origin();
 
   struct swc_rectangle wgeom;
-  swc_window_get_geometry(w, &wgeom);
+  host_window_get_geometry(w, &wgeom);
 
   int32_t left =
     origin->x - screen->width / 2;
@@ -323,11 +324,11 @@ newwindow(struct swc_window *swc)
        w->fullscreen.geometry_saved);
 
   wl_list_insert(&compositor.windows, &w->link);
-  swc_window_set_handler(swc, &windowhandler, w);
-  swc_window_set_stacked(swc);
-  swc_window_set_border(swc, inner_border_color_inactive, inner_border_width,
+  host_window_set_handler(swc, &windowhandler, w);
+  host_window_set_stacked(swc);
+  host_window_set_border(swc, inner_border_color_inactive, inner_border_width,
                         outer_border_color_inactive, outer_border_width);
-  w->pid = swc_window_get_pid(swc);
+  w->pid = host_window_get_pid(swc);
 
   struct swc_rectangle default_geometry;
 
@@ -336,12 +337,12 @@ newwindow(struct swc_window *swc)
 
   
   placement_compute(&default_geometry); 
-  swc_window_set_geometry(swc, &default_geometry);
+  host_window_set_geometry(swc, &default_geometry);
   
   if (w) {
 
   }
-  swc_window_show(swc);
+  host_window_show(swc);
   printf("window '%s'\n", swc->title ? swc->title : "");
   if (!active_immersed_window())
       focus_window(swc, "new_window");
@@ -370,7 +371,7 @@ newscreen(struct swc_screen *swc)
   wl_list_insert(&compositor.screens, &s->link);
   if (!compositor.current_screen)
     compositor.current_screen = s;
-  swc_screen_set_handler(swc, &screenhandler, s);
+  host_screen_set_handler(swc, &screenhandler, s);
   printf("screen %dx%d\n", swc->geometry.width, swc->geometry.height);
 
 }
@@ -411,9 +412,9 @@ fullscreen_active(struct window *window,
     window->fullscreen.enabled = true;
     window->fullscreen.snapped = true;
 
-    swc_window_set_geometry(window->swc, screen);
+    host_window_set_geometry(window->swc, screen);
 
-    swc_window_set_fullscreen(
+    host_window_set_fullscreen(
         window->swc,
         compositor.current_screen->swc);
 
@@ -434,9 +435,9 @@ fullscreen_passive(struct window *window)
 
     window->fullscreen.snapped = false;
 
-    swc_window_set_fullscreen(window->swc, NULL);
+    host_window_set_fullscreen(window->swc, NULL);
 
-    swc_window_set_stacked(window->swc);
+    host_window_set_stacked(window->swc);
 
     viewport_update_screen();
 }
@@ -487,13 +488,13 @@ window_toggle_fullscreen(void)
         window->fullscreen.enabled = false;
         window->fullscreen.snapped = false;
         window->fullscreen.geometry_saved = false;
-        swc_window_set_fullscreen(window->swc, NULL);
+        host_window_set_fullscreen(window->swc, NULL);
 
-        swc_window_set_geometry(
+        host_window_set_geometry(
             window->swc,
             &window->fullscreen.restore_geometry);
 
-        swc_window_set_stacked(window->swc);
+        host_window_set_stacked(window->swc);
         viewport_update_screen();
 
         return;
@@ -504,7 +505,7 @@ window_toggle_fullscreen(void)
      */
     if (!window->fullscreen.geometry_saved) {
 
-        swc_window_get_geometry(
+        host_window_get_geometry(
             window->swc,
             &window->fullscreen.restore_geometry);
 
@@ -549,7 +550,7 @@ window_move_begin(void)
     x = input.cursor.x;
     y = input.cursor.y;
     
-    if (!swc_window_get_geometry(compositor.focused, &geometry))
+    if (!host_window_get_geometry(compositor.focused, &geometry))
         return;
 
     move_state.start_cursor_x = x;
@@ -575,7 +576,7 @@ window_resize(void)
         return;
     
     if (compositor.focused)
-        swc_window_begin_resize(
+        host_window_begin_resize(
             compositor.focused,
             SWC_WINDOW_EDGE_RIGHT |
             SWC_WINDOW_EDGE_BOTTOM);
@@ -588,7 +589,7 @@ window_close(void)
     if (!compositor.focused)
         return;
 
-    swc_window_close(compositor.focused);
+    host_window_close(compositor.focused);
 }
 
 
@@ -607,7 +608,7 @@ window_nearest(int32_t x,
         if (!w->swc)
             continue;
 
-        if (!swc_window_get_geometry(w->swc, &geom))
+        if (!host_window_get_geometry(w->swc, &geom))
             continue;
 
         if (w->swc == compositor.focused)
@@ -661,7 +662,7 @@ window_move_tick(void *data)
 
 
     /* Smooth window movement */
-    if (swc_window_get_geometry(compositor.focused, &geometry)) {
+    if (host_window_get_geometry(compositor.focused, &geometry)) {
 
         int32_t target_x =
             move_state.start_window_x +
@@ -680,7 +681,7 @@ window_move_tick(void *data)
             geometry.y +
             (int32_t)((target_y - geometry.y) * move_ease_factor);
 
-        swc_window_set_position(compositor.focused,
+        host_window_set_position(compositor.focused,
                                 new_x,
                                 new_y);
     }

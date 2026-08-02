@@ -1,7 +1,8 @@
 #include "spawn.h"
-#include "hevel.h"
+#include "canvas.h"
 #include "placement.h"
 #include "../config.h"
+#include "host.h"
 
 struct spawn_request spawn = {0};
 

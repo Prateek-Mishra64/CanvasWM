@@ -1,5 +1,5 @@
-#ifndef HEVEL_H
-#define HEVEL_H
+#ifndef CANVAS_H
+#define CANVAS_H
 
 #define _POSIX_C_SOURCE 200809L
 

@@ -1,10 +1,12 @@
-#include "hevel.h"
+#include "canvas.h"
 #include "binding.h"
 #include "action.h"
 #include "viewport.h"
 #include "window.h"
 #include "spawn.h"
 #include "input.h"
+#include "host.h"
+
 
 #include <signal.h>
 #include <stdlib.h>
@@ -309,7 +311,7 @@ main(void)
   evloop = wl_display_get_event_loop(compositor.display);
   compositor.evloop = evloop;
 
-  if (!swc_initialize(compositor.display, evloop, &manager)) {
+  if (!host_initialize(compositor.display, evloop, &manager)) {
     fprintf(stderr, "cannot initialize swc\n");
     return 1;
   }
@@ -321,7 +323,7 @@ main(void)
 
   /* we can bind mouse buttons using SWC_MOD_ANY */
   /* Quit */
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO | SWC_MOD_SHIFT,
     XKB_KEY_q,
@@ -329,7 +331,7 @@ main(void)
     NULL);
 
 /* Spawn */
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_t,
@@ -337,21 +339,21 @@ main(void)
     NULL);
 
 
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_f,
     spawn_browser,
     NULL);
 
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_g,
     spawn_file_browser,
     NULL);
 
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_space,
@@ -360,28 +362,28 @@ main(void)
 
 
 /* Viewport navigation */
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_h,
     bind_viewport_left,
     NULL);
 
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_j,
     bind_viewport_down,
     NULL);
 
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_k,
     bind_viewport_up,
     NULL);
 
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_l,
@@ -389,21 +391,21 @@ main(void)
     NULL);
 
 /* Window */
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_period,
     bind_window_fullscreen,
     NULL);
 
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_c,
     bind_window_close,
     NULL);
 
-  swc_add_binding(
+  host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
     XKB_KEY_x,
@@ -411,26 +413,26 @@ main(void)
     NULL);
 
 
-  swc_add_binding(SWC_BINDING_BUTTON,
+  host_add_binding(SWC_BINDING_BUTTON,
                 SWC_MOD_ANY,
                 BTN_LEFT,
                 button,
                 NULL);
 
-  swc_add_binding(SWC_BINDING_BUTTON,
+  host_add_binding(SWC_BINDING_BUTTON,
                 SWC_MOD_ANY,
                 BTN_MIDDLE,
                 button,
                 NULL);
 
-  swc_add_binding(SWC_BINDING_BUTTON,
+  host_add_binding(SWC_BINDING_BUTTON,
                 SWC_MOD_ANY,
                 BTN_RIGHT,
                 button,
                 NULL);
    
-  swc_add_axis_binding(SWC_MOD_ANY, 0, axis, NULL);
-  swc_add_axis_binding(SWC_MOD_ANY, 1, axis, NULL);
+  host_add_axis_binding(SWC_MOD_ANY, 0, axis, NULL);
+  host_add_axis_binding(SWC_MOD_ANY, 1, axis, NULL);
   sock = wl_display_add_socket_auto(compositor.display);
   if (!sock) {
     fprintf(stderr, "cannot add socket\n");
@@ -457,7 +459,7 @@ main(void)
 
   wl_display_run(compositor.display);
 
-  swc_finalize();
+  host_finalize();
   wl_display_destroy(compositor.display);
 
   return 0;

@@ -1,7 +1,8 @@
-#include "hevel.h"
+#include "canvas.h"
 #include "placement.h"
 #include "window.h"
 #include "viewport.h"
+#include "host.h"
 
 /*
  * Every window begins at the origin.
@@ -47,7 +48,7 @@ placement_compute_origin(struct swc_rectangle *candidate)
     if (focused && focused->fullscreen.enabled && focused->fullscreen.snapped) {
         struct swc_rectangle geometry;
 
-        if (swc_window_get_geometry(compositor.focused, &geometry)) {
+        if (host_window_get_geometry(compositor.focused, &geometry)) {
             candidate->x =
                 geometry.x +
                 (int32_t)geometry.width +
@@ -69,7 +70,7 @@ placement_decide(const struct swc_rectangle *candidate,
 
     wl_list_for_each(w, &compositor.windows, link) {
 
-        if (!swc_window_get_geometry(w->swc, &geometry))
+        if (!host_window_get_geometry(w->swc, &geometry))
             continue;
 
         /*
@@ -118,7 +119,7 @@ placement_compute(struct swc_rectangle *geometry)
     if (!cascade_parent)
         break;
 
-    if (!swc_window_get_geometry(cascade_parent->swc, &geometry))
+    if (!host_window_get_geometry(cascade_parent->swc, &geometry))
         break;
 
     candidate.x = geometry.x + PLACEMENT_OFFSET;

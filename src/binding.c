@@ -4,6 +4,7 @@
 #include "input.h"
 #include "../config.h"
 #include <stdbool.h>
+#include "host.h"
 
 
 bool

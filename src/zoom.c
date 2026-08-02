@@ -1,5 +1,6 @@
 #include "zoom.h"
-#include "hevel.h"
+#include "canvas.h"
+#include "host.h"
 
 
 int
@@ -7,13 +8,13 @@ zoom_tick(void *data)
 {
   (void)data;
 
-  float current = swc_get_zoom();
+  float current = host_get_zoom();
   float target = zoom.target;
   float diff = target - current;
 
   /* Stop if close enough */
   if (diff > -0.01f && diff < 0.01f) {
-    swc_set_zoom(target);
+    host_set_zoom(target);
     return 0;
   }
 
@@ -22,7 +23,7 @@ zoom_tick(void *data)
   if (step > 0 && step < 0.01f) step = 0.01f;
   if (step < 0 && step > -0.01f) step = -0.01f;
 
-  swc_set_zoom(current + step);
+  host_set_zoom(current + step);
 
   /* Continue animation */
   wl_event_source_timer_update(zoom.timer, timerms);
