@@ -26,42 +26,6 @@ struct sel_state sel = {0};
 bool focus_center = center_focus;
 
 static void
-maybe_enable_nein_cursor_theme(void)
-{
-  const struct nein_cursor_meta *arrow =
-      &nein_cursor_metadata[NEIN_CURSOR_WHITEARROW];
-  const struct nein_cursor_meta *box =
-      &nein_cursor_metadata[NEIN_CURSOR_BOXCURSOR];
-  const struct nein_cursor_meta *cross =
-      &nein_cursor_metadata[NEIN_CURSOR_CROSSCURSOR];
-  const struct nein_cursor_meta *sight =
-      &nein_cursor_metadata[NEIN_CURSOR_SIGHTCURSOR];
-  const struct nein_cursor_meta *up = &nein_cursor_metadata[NEIN_CURSOR_T];
-  const struct nein_cursor_meta *down = &nein_cursor_metadata[NEIN_CURSOR_B];
-
-  if (!cursor_theme || strcmp(cursor_theme, "nein") != 0) return;
-
-  swc_set_cursor_mode(SWC_CURSOR_MODE_COMPOSITOR);
-  swc_set_cursor_image(SWC_CURSOR_DEFAULT, &nein_cursor_data[arrow->offset],
-                       arrow->width, arrow->height, arrow->hotspot_x,
-                       arrow->hotspot_y);
-  swc_set_cursor_image(SWC_CURSOR_BOX, &nein_cursor_data[box->offset],
-                       box->width, box->height, box->hotspot_x, box->hotspot_y);
-  swc_set_cursor_image(SWC_CURSOR_CROSS, &nein_cursor_data[cross->offset],
-                       cross->width, cross->height, cross->hotspot_x,
-                       cross->hotspot_y);
-  swc_set_cursor_image(SWC_CURSOR_SIGHT, &nein_cursor_data[sight->offset],
-                       sight->width, sight->height, sight->hotspot_x,
-                       sight->hotspot_y);
-  swc_set_cursor_image(SWC_CURSOR_UP, &nein_cursor_data[up->offset], up->width,
-                       up->height, up->hotspot_x, up->hotspot_y);
-  swc_set_cursor_image(SWC_CURSOR_DOWN, &nein_cursor_data[down->offset],
-                       down->width, down->height, down->hotspot_x,
-                       down->hotspot_y);
-
-}
-
-static void
 newdevice(struct libinput_device *dev)
 {
   (void)dev;
@@ -291,8 +255,16 @@ sig(int s)
     wl_display_terminate(compositor.display);
 }
 
+int main(int argc, char **argv)
+{
+    int result = host_initialize(argc, argv);
 
-int
+    host_finalize();
+
+    return result;
+}
+
+/*int
 main(void)
 {
   struct wl_event_loop *evloop;
@@ -311,18 +283,15 @@ main(void)
   evloop = wl_display_get_event_loop(compositor.display);
   compositor.evloop = evloop;
 
-  if (!host_initialize(compositor.display, evloop, &manager)) {
+  if (!host_initialize(int)) {
     fprintf(stderr, "cannot initialize swc\n");
     return 1;
   }
   
 
-  maybe_enable_nein_cursor_theme();
   input_initialize();
 
 
-  /* we can bind mouse buttons using SWC_MOD_ANY */
-  /* Quit */
   host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO | SWC_MOD_SHIFT,
@@ -330,7 +299,6 @@ main(void)
     bind_quit,
     NULL);
 
-/* Spawn */
   host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
@@ -361,7 +329,6 @@ main(void)
     NULL);
 
 
-/* Viewport navigation */
   host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
@@ -390,7 +357,6 @@ main(void)
     bind_viewport_right,
     NULL);
 
-/* Window */
   host_add_binding(
     SWC_BINDING_KEY,
     SWC_MOD_LOGO,
@@ -457,12 +423,10 @@ main(void)
 
   viewport_update_screen();
 
-  wl_display_run(compositor.display);
 
   host_finalize();
-  wl_display_destroy(compositor.display);
 
   return 0;
 
 }
-  
+ */ 

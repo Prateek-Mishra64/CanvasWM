@@ -105,7 +105,7 @@ viewport_tick(void *data)
             w->swc == compositor.focused)
             continue;
 
-        if (!swc_window_get_geometry(w->swc, &geometry))
+        if (!host_window_get_geometry(w->swc, &geometry))
             continue;
 
         host_window_set_position(w->swc,

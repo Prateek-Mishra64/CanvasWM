@@ -12,18 +12,19 @@ CXXFLAGS = -O2 -Wall -Wextra -std=c++20 -I$(PREFIX)/include
 
 LDFLAGS = -L$(PREFIX)/lib -Wl,-rpath,$(PREFIX)/lib
 
-PKGS = swc wayfire wlroots-0.20
+PKGS = wayfire wlroots-0.20
 CFLAGS   += $(shell $(PKG_CONFIG) --cflags $(PKGS))
 
 CXXFLAGS += $(shell $(PKG_CONFIG) --cflags $(PKGS))
 CXXFLAGS += \
 	-I$(WAYFIRE_SRC) \
-	-I$(WAYFIRE_SRC)/src
+	-I$(WAYFIRE_SRC)/src \
+	-I$(HOME)/Projects/Canvas-wayfire/build/src/libwayfire.so.p
 
 LDLIBS += $(shell $(PKG_CONFIG) --libs $(PKGS))
 C_SRC = src/canvas.c src/input.c src/scroll.c src/select.c src/window.c src/zoom.c src/spawn.c src/placement.c src/action.c src/binding.c src/viewport.c
 
-CPP_SRC = src/host.cpp
+CPP_SRC = src/host.cpp 
 
 OBJ = $(C_SRC:.c=.o) $(CPP_SRC:.cpp=.o)
 
@@ -49,3 +50,4 @@ install: canvas
 	install -D -m 755 canvas $(DESTDIR)$(BINDIR)/canvas
 
 .PHONY: all clean confclean install
+

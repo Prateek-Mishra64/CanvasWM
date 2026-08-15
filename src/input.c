@@ -16,6 +16,7 @@ static bool middle_down;
 static bool right_down;
 static bool dragging;
 static bool cursor_position_raw(int32_t *, int32_t *);
+static uint32_t current_input_modifiers;
 bool interaction_held = false;
 bool cursor_position(int32_t *, int32_t *);
 
@@ -24,7 +25,7 @@ struct input_state input;
 static inline uint32_t
 current_modifiers(void)
 {
-    return host_get_modifiers();
+    return current_input_modifiers;
 }
 
 
@@ -250,4 +251,52 @@ cursor_position(int32_t *x, int32_t *y)
   return true;
 }
 
+void
+input_pointer_motion(int32_t x,
+                     int32_t y,
+                     uint32_t time)
+{
+    (void)time;
 
+    input.cursor.x = x;
+    input.cursor.y = y;
+}
+
+
+void
+input_pointer_button(uint32_t button_code,
+                     bool pressed,
+                     uint32_t time)
+{
+    uint32_t state =
+        pressed ? WL_POINTER_BUTTON_STATE_PRESSED
+                : WL_POINTER_BUTTON_STATE_RELEASED;
+
+    button(NULL, time, button_code, state);
+}
+
+void
+input_pointer_axis(uint32_t axis_code,
+                   double delta,
+                   uint32_t time)
+{
+    axis(NULL, time, axis_code, (int32_t)delta);
+}
+
+void
+input_keyboard_key(uint32_t key,
+                   bool pressed,
+                   uint32_t modifiers)
+{
+    current_input_modifiers = modifiers;
+
+    input_keyboard((xkb_keysym_t)key, pressed);
+
+    fprintf(stderr,
+            "key=%u state=%s modifiers=0x%x\n",
+            key,
+            pressed ? "pressed" : "released",
+            modifiers);
+
+    fflush(stderr);
+}

@@ -140,7 +140,21 @@ void
 input_keyboard(xkb_keysym_t key,
                bool held);
 
+void input_pointer_motion(int32_t x,
+                          int32_t y,
+                          uint32_t time);
 
+void input_pointer_button(uint32_t button,
+                          bool pressed,
+                          uint32_t time);
+
+void input_pointer_axis(uint32_t axis,
+                        double delta,
+                        uint32_t time);
+
+void input_keyboard_key(uint32_t key,
+                        bool pressed,
+                        uint32_t modifiers);
 
 
 
