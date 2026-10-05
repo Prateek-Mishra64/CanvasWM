@@ -1,5 +1,5 @@
-#ifndef CANVAS_H
-#define CANVAS_H
+#ifndef LANTERN_H
+#define LANTERN_H
 
 #define _POSIX_C_SOURCE 200809L
 
@@ -21,7 +21,6 @@
 #define BTN_MIDDLE 0x112
 #endif
 
-#include <swc.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 
 #include "../config.h"

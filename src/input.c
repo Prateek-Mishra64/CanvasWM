@@ -1,5 +1,5 @@
 #include "input.h"
-#include "canvas.h"
+#include "lantern.h"
 #include "binding.h"
 #include "viewport.h"
 #include "window.h"
@@ -18,7 +18,7 @@ static bool dragging;
 static bool cursor_position_raw(int32_t *, int32_t *);
 static uint32_t current_input_modifiers;
 bool interaction_held = false;
-bool cursor_position(int32_t *, int32_t *);
+bool cursor_position(int32_t *, int32_t *, uint32_t *);
 
 struct input_state input;
 
@@ -193,8 +193,10 @@ cursor_tick(void *data)
 
     int32_t x, y;
     struct screen *ns = NULL;
+     printf("[CANVAS CURSOR TICK]\n");
+    fflush(stdout);
 
-    if (!cursor_position_raw(&x, &y)) {
+    if (!host_cursor_position(&x, &y, &time)) {
         wl_event_source_timer_update(cursor_timer, timerms);
         return 0;
     }
@@ -224,15 +226,16 @@ static bool
 cursor_position_raw(int32_t *x, int32_t *y)
 {
   int32_t fx, fy;
+  uint32_t ftime;
 
-  if (!host_cursor_position(&fx, &fy)) return false;
+  if (!cursor_position(&fx, &fy, &ftime)) return false;
   *x = fx >> 8;
   *y = fy >> 8;
   return true;
 }
 
 bool
-cursor_position(int32_t *x, int32_t *y)
+cursor_position(int32_t *x, int32_t *y, uint32_t *time)
 {
   if (!cursor_position_raw(x, y)) return false;
 
@@ -260,6 +263,9 @@ input_pointer_motion(int32_t x,
 
     input.cursor.x = x;
     input.cursor.y = y;
+    input.cursor.time = time;
+
+    
 }
 
 

@@ -47,7 +47,7 @@ enum viewport_mode {
     VIEWPORT_GESTURE,
 };
 
-struct canvas_screen {
+struct lantern_screen {
     int32_t x;
     int32_t y;
 
@@ -55,15 +55,15 @@ struct canvas_screen {
     uint32_t height;
 };
 
-const struct canvas_screen *
+const struct lantern_screen *
 viewport_screen(void);
 
-struct canvas_origin {
+struct lantern_origin {
     int32_t x;
     int32_t y;
 };
 
-const struct canvas_origin *
+const struct lantern_origin *
 viewport_origin(void);
 
 int32_t
@@ -77,8 +77,8 @@ viewport_is_moving(void);
 
 struct viewport_state {
     
-    struct canvas_origin origin;
-    struct canvas_screen screen;
+    struct lantern_origin origin;
+    struct lantern_screen screen;
 
     /* Current movement request */
     int32_t request_x;

@@ -1,5 +1,5 @@
 #include "viewport.h"
-#include "canvas.h"
+#include "lantern.h"
 #include "input.h"
 #include "action.h"
 #include "window.h"
@@ -10,7 +10,7 @@
 #include <stdint.h>
 
 struct viewport_state viewport;
-const struct canvas_origin *
+const struct lantern_origin *
 viewport_origin(void)
 {
     return &viewport.origin;
@@ -194,7 +194,7 @@ viewport_follow_window(void)
     int32_t x = input.cursor.x;
     int32_t y = input.cursor.y;
 
-    struct canvas_screen *screen =
+    struct lantern_screen *screen =
            &viewport.screen;
 
     if (y < move_scroll_edge_threshold) {
@@ -309,7 +309,7 @@ viewport_begin_pan(void)
                                  timerms);
 }
 
-const struct canvas_screen *
+const struct lantern_screen *
 viewport_screen(void)
 {
     return &viewport.screen;

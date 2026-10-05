@@ -1,4 +1,4 @@
-#include "canvas.h"
+#include "lantern.h"
 #include "binding.h"
 #include "action.h"
 #include "viewport.h"
@@ -32,11 +32,6 @@ newdevice(struct libinput_device *dev)
 }
 
 
-static const struct swc_manager manager = {
-    .new_screen = newscreen,
-    .new_window = newwindow,
-    .new_device = newdevice,
-};
 
 #define REQUIRE_PRESS()                     \
     do {                                    \

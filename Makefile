@@ -22,13 +22,14 @@ CXXFLAGS += \
 	-I$(HOME)/Projects/Canvas-wayfire/build/src/libwayfire.so.p
 
 LDLIBS += $(shell $(PKG_CONFIG) --libs $(PKGS))
-C_SRC = src/canvas.c src/input.c src/scroll.c src/select.c src/window.c src/zoom.c src/spawn.c src/placement.c src/action.c src/binding.c src/viewport.c
+C_SRC = src/lantern.c src/input.c src/scroll.c src/select.c src/window.c src/zoom.c src/spawn.c src/placement.c src/action.c src/binding.c src/viewport.c
+#C_SRC = src/lantern.c
 
 CPP_SRC = src/host.cpp 
 
 OBJ = $(C_SRC:.c=.o) $(CPP_SRC:.cpp=.o)
 
-all: canvas
+all: lantern
 
 
 %.o: %.c
@@ -37,17 +38,17 @@ all: canvas
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-canvas: $(OBJ)
+lantern: $(OBJ)
 	$(CXX) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
 
 clean:
-	rm -f canvas $(OBJ)
+	rm -f lantern $(OBJ)
 
 confclean: clean
 	rm -f config.h
 
-install: canvas
-	install -D -m 755 canvas $(DESTDIR)$(BINDIR)/canvas
+install: lantern
+	install -D -m 755 lantern $(DESTDIR)$(BINDIR)/lantern
 
 .PHONY: all clean confclean install
 

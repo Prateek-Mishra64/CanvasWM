@@ -1,7 +1,7 @@
 #ifndef SPAWN_H
 #define SPAWN_H
 
-#include "canvas.h"
+#include "lantern.h"
 #define SPAWN_MAX_ARGS 32
 
 struct spawn_request {

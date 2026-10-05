@@ -1,5 +1,5 @@
 #include "zoom.h"
-#include "canvas.h"
+#include "lantern.h"
 #include "host.h"
 
 

@@ -103,6 +103,7 @@ INPUT_KEY_P,
 struct cursor_state {
     int32_t x;
     int32_t y;
+    uint32_t time;
 };
 
 struct input_state {
@@ -123,7 +124,7 @@ void input_initialize(void);
 int
 cursor_tick(void *data);
 
-bool cursor_position(int32_t *x, int32_t *y);
+bool cursor_position(int32_t *x, int32_t *y, uint32_t *time);
 void
 axis(void *data, uint32_t time, uint32_t axis, int32_t value120);
 void

@@ -1,5 +1,5 @@
 #include "select.h"
-#include "canvas.h"
+#include "lantern.h"
 #include "input.h"
 #include "spawn.h"
 #include "window.h"
@@ -14,7 +14,7 @@ select_tick(void *data)
   (void)data;
   if (!sel.selecting) return 0;
 
-  if (cursor_position(&x, &y)) {
+  if (cursor_position(&x, &y, &time)) {
     sel.cur_x = x;
     sel.cur_y = y;
     host_overlay_set_box(sel.start_x, sel.start_y, x, y, select_box_color,

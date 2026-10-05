@@ -2,11 +2,18 @@
 #define WINDOW_H
 
 #include <stdbool.h>
-#include <swc.h>
 #include <wayland-util.h>
 #include <wayland-server.h>
 
 struct screen;
+
+struct swc_rectangle
+{
+    int32_t x;
+    int32_t y;
+    uint32_t width;
+    uint32_t height;
+};
 
 
 void
@@ -46,7 +53,7 @@ window_move_begin(void);
 void
 window_end_move(void);
 
-struct canvas_fullscreen {
+struct lantern_fullscreen {
     bool enabled;
     bool snapped;
 
@@ -62,7 +69,7 @@ struct window {
     pid_t pid;
 
     bool sticky;
-    struct canvas_fullscreen fullscreen;
+    struct lantern_fullscreen fullscreen;
 };
 
 

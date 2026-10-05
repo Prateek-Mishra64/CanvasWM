@@ -1,5 +1,5 @@
 #include "window.h"
-#include "canvas.h"
+#include "lantern.h"
 #include "input.h"
 #include "zoom.h"
 #include "spawn.h"
@@ -89,13 +89,13 @@ window_update_focus(void)
     }
 
     /*
-     * Pointer over empty canvas.
+     * Pointer over empty lantern.
      */
     if (!swc) {
         if (active_immersed_window())
           return;
         if (compositor.focused)
-            focus_window(NULL, "emptyCanvas");
+            focus_window(NULL, "emptylantern");
         return;
     }
 
@@ -174,8 +174,8 @@ focus_window_reveal(struct swc_window *swc,
 
     focus_window(swc, reason);
 
-    const struct canvas_screen *screen = viewport_screen();
-    const struct canvas_origin *origin = viewport_origin();
+    const struct lantern_screen *screen = viewport_screen();
+    const struct lantern_origin *origin = viewport_origin();
 
     if (!swc || !screen)
         return;
@@ -228,10 +228,10 @@ focus_window_reveal(struct swc_window *swc,
 bool
 is_visible(struct swc_window *w)
 {   
-  const struct canvas_screen *screen =
+  const struct lantern_screen *screen =
                     viewport_screen();
 
-  const struct canvas_origin *origin =
+  const struct lantern_origin *origin =
                     viewport_origin();
 
   struct swc_rectangle wgeom;
@@ -263,10 +263,10 @@ is_visible(struct swc_window *w)
 bool
 is_on_screen(struct swc_rectangle *window)
 {
-  const struct canvas_screen *screen =
+  const struct lantern_screen *screen =
                     viewport_screen();
 
-  const struct canvas_origin *origin =
+  const struct lantern_origin *origin =
                     viewport_origin();
 
   int32_t left =
@@ -449,7 +449,7 @@ fullscreen_update(struct window *window)
     /*
     * Synchronize the current immersion state with the viewport after a
     * viewport transition. This keeps Active and Passive immersion states
-    * consistent with viewport interaction and ensures the canvas recognizes
+    * consistent with viewport interaction and ensures the lantern recognizes
     * the new interaction rules before the next frame.
     */
     if (!window)

@@ -12,7 +12,68 @@ extern "C" {
 #include <sys/types.h>
 
 #include <wayland-server.h>
-#include <swc.h>
+
+/* ============================================================================
+ * Temporary compatibility type
+ * ========================================================================== */
+
+/*
+ * Phase 1 compatibility boundary.
+ *
+ * These are Lantern-side compatibility declarations only. They do not pull
+ * SWC back into the project. The host layer owns translation to/from Wayfire.
+ */
+
+struct swc_window;
+struct swc_screen;
+struct swc_window_handler;
+struct swc_screen_handler;
+struct swc_decor;
+
+struct swc_rectangle
+{
+    int32_t x;
+    int32_t y;
+    uint32_t width;
+    uint32_t height;
+};
+
+/*
+ * The old host API still uses these enum names in its signatures. Keep the
+ * tags defined here so C and C++ both see a complete type. Their actual
+ * values are not used by the Phase-1 host stubs and will be replaced by
+ * Lantern/host-neutral values during the subsystem migration.
+ */
+enum swc_cursor_kind
+{
+    SWC_CURSOR_KIND_NONE = 0
+};
+
+enum swc_cursor_mode
+{
+    SWC_CURSOR_MODE_NONE = 0
+};
+
+enum swc_binding_type
+{
+    SWC_BINDING_TYPE_NONE = 0
+};
+
+/*
+ * Compatibility callback types for the old host signatures.
+ *
+ * They are retained only so the host boundary can compile while Lantern's
+ * own binding system replaces the old SWC registration layer.
+ */
+typedef void (*swc_binding_handler)(void *data,
+                                    uint32_t time,
+                                    uint32_t value,
+                                    uint32_t state);
+
+typedef void (*swc_axis_binding_handler)(void *data,
+                                         uint32_t time,
+                                         uint32_t axis,
+                                         int32_t value120);
 
 /* ============================================================================
  * Lifecycle
@@ -30,7 +91,8 @@ host_finalize(void);
 
 bool
 host_cursor_position(int32_t *x,
-                     int32_t *y);
+                     int32_t *y,
+                     uint32_t *time);
 
 void
 host_pointer_send_button(uint32_t time,
@@ -121,6 +183,9 @@ void
 host_window_set_position(struct swc_window *window,
                          int32_t x,
                          int32_t y);
+
+void
+host_move_all_window(int32_t dx, int32_t dy);
 
 void
 host_window_set_size(struct swc_window *window,

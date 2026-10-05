@@ -1,5 +1,5 @@
 #include "spawn.h"
-#include "canvas.h"
+#include "lantern.h"
 #include "placement.h"
 #include "../config.h"
 #include "host.h"

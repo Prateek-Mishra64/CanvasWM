@@ -1,4 +1,4 @@
-#include "canvas.h"
+#include "lantern.h"
 #include "placement.h"
 #include "window.h"
 #include "viewport.h"
@@ -7,7 +7,7 @@
 /*
  * Every window begins at the origin.
  *
- * The origin is the only fixed behaviour on the infinite canvas.
+ * The origin is the only fixed behaviour on the infinite lantern.
  *
  * Cascading is not a placement strategy. It is a safeguard that
  * prevents a newly spawned window from completely hiding another
@@ -20,7 +20,7 @@
 static void
 placement_compute_origin(struct swc_rectangle *candidate)
 {
-    const struct canvas_origin *origin =
+    const struct lantern_origin *origin =
         viewport_origin();
 
     int center_x = origin->x;
